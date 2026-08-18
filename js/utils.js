@@ -1,0 +1,26 @@
+// Cortex Rush - shared math helpers and a seedable RNG.
+const Utils = {
+  clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+  },
+
+  lerp(a, b, t) {
+    return a + (b - a) * t;
+  },
+
+  // Simple mulberry32 PRNG so races can be reproducible when seeded.
+  createRng(seed) {
+    let state = seed >>> 0;
+    return function rng() {
+      state |= 0;
+      state = (state + 0x6d2b79f5) | 0;
+      let t = Math.imul(state ^ (state >>> 15), 1 | state);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  },
+
+  percentRemaining(n, total) {
+    return (n % total) / total;
+  },
+};
