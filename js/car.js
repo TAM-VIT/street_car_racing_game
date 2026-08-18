@@ -31,6 +31,13 @@ const PlayerCar = (function () {
 
     state.speed = Utils.clamp(state.speed, 0, c.maxSpeed);
     state.z += state.speed * dt;
+
+    // Steering scales with speed: tight and responsive when slow, a little
+    // harder to place at high speed, so dodging obstacles takes skill.
+    const speedRatio = state.speed / c.maxSpeed;
+    const steer = Utils.lerp(c.steerRate, c.steerRate * c.steerHighSpeedFactor, speedRatio);
+    if (keys.left) state.x -= steer * dt;
+    if (keys.right) state.x += steer * dt;
   }
 
   return { state, reset, worldX, update };
