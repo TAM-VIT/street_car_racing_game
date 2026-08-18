@@ -21,4 +21,41 @@
   window.Game = window.Game || {};
   window.Game.canvas = canvas;
   window.Game.ctx = ctx;
+
+  // Fixed timestep update with an accumulator so gameplay speed is
+  // identical regardless of the machine's actual frame rate.
+  const STEP = 1 / 60;
+  const MAX_FRAME = 0.25; // clamp huge gaps (tab switch, breakpoint) to avoid spiral of death
+  let lastTime = performance.now();
+  let accumulator = 0;
+
+  function update(dt) {
+    // Populated by later modules (car, TAM, world, HUD).
+    if (window.Game.update) window.Game.update(dt);
+  }
+
+  function render() {
+    if (window.Game.render) {
+      window.Game.render(ctx);
+    } else {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+  }
+
+  function frame(now) {
+    let dt = (now - lastTime) / 1000;
+    lastTime = now;
+    if (dt > MAX_FRAME) dt = MAX_FRAME;
+    accumulator += dt;
+
+    while (accumulator >= STEP) {
+      update(STEP);
+      accumulator -= STEP;
+    }
+
+    render();
+    requestAnimationFrame(frame);
+  }
+
+  requestAnimationFrame(frame);
 })();
