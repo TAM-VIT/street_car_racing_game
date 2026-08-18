@@ -1,0 +1,4 @@
+.git_commit_helper.sh
+*.log
+.DS_Store
+Thumbs.db
