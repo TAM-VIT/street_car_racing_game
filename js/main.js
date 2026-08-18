@@ -22,6 +22,13 @@
   window.Game.canvas = canvas;
   window.Game.ctx = ctx;
 
+  Road.build();
+  window.Game.render = function (ctx, state) {
+    const width = canvas.clientWidth;
+    const height = canvas.clientHeight;
+    RoadRenderer.render(ctx, width, height, 0, 0);
+  };
+
   // Fixed timestep update with an accumulator so gameplay speed is
   // identical regardless of the machine's actual frame rate.
   const STEP = 1 / 60;
