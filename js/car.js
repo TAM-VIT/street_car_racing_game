@@ -41,6 +41,11 @@ const PlayerCar = (function () {
     if (keys.left) state.x -= steer * dt;
     if (keys.right) state.x += steer * dt;
 
+    // On curves the road pushes the car outward slightly at speed,
+    // encouraging the player to steer into the curve. Kept subtle.
+    const segment = Road.findSegment(state.z);
+    state.x += segment.curve * speedRatio * speedRatio * c.centrifugalStrength * dt * 1000;
+
     // Off-road (past the road edge, onto grass/shoulder) slows the car and
     // caps how fast it can go until the player steers back on.
     state.offRoad = Math.abs(state.x) > 1;
