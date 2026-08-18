@@ -24,6 +24,7 @@
 
   Road.build();
   PlayerCar.reset();
+  World.placeObstacles(Utils.createRng(Date.now() & 0xffffffff));
   window.Game.render = function (ctx, state) {
     const width = canvas.clientWidth;
     const height = canvas.clientHeight;
