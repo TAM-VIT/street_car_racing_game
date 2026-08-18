@@ -47,9 +47,22 @@ const RoadRenderer = (function () {
     polygon(ctx, x1 - w1, y1, x1 + w1, y1, x2 + w2, y2, x2 - w2, y2, colorSet.road);
 
     if (laneLine) {
-      const lw1 = w1 / 20;
-      const lw2 = w2 / 20;
-      polygon(ctx, x1 - lw1, y1, x1 + lw1, y1, x2 + lw2, y2, x2 - lw2, y2, "#f2f2f2");
+      const lanes = CONFIG.ROAD.lanes;
+      const lineW1 = Math.max(1, w1 / 40);
+      const lineW2 = Math.max(1, w2 / 40);
+      for (let i = 1; i < lanes; i++) {
+        const t = (i / lanes) * 2 - 1; // -1..1 across road width
+        const lx1 = x1 + t * w1;
+        const lx2 = x2 + t * w2;
+        polygon(
+          ctx,
+          lx1 - lineW1, y1,
+          lx1 + lineW1, y1,
+          lx2 + lineW2, y2,
+          lx2 - lineW2, y2,
+          "#f2f2f2"
+        );
+      }
     }
   }
 
