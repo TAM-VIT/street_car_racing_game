@@ -38,7 +38,9 @@
   let accumulator = 0;
 
   function update(dt) {
-    // Populated by later modules (car, TAM, world, HUD).
+    if (GameStateMachine.get() === GameState.RACE) {
+      PlayerCar.update(dt, Input.keys);
+    }
     if (window.Game.update) window.Game.update(dt);
   }
 

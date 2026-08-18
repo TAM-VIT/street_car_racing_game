@@ -17,6 +17,20 @@ const CONFIG = {
     drawDistance: 300, // segments drawn ahead
   },
 
+  CAR: {
+    maxSpeed: 22000, // world units / second at full throttle
+    accel: 9000, // speed gained per second while accelerating
+    brakeDecel: 16000, // speed lost per second while braking
+    naturalDecel: 3500, // speed lost per second with no input (engine braking)
+    offRoadDecel: 9000, // extra speed lost per second while off the road
+    offRoadMaxSpeed: 9000, // speed cap while off the road
+    steerRate: 2.2, // lateral units/sec at low speed
+    steerHighSpeedFactor: 0.45, // multiplier applied to steerRate at max speed
+    centrifugalStrength: 0.0009, // curve push per unit of curve * speed
+    obstacleSpeedPenalty: 7000, // speed lost instantly on collision
+    obstacleControlDisruption: 0.6, // seconds of reduced steering after a hit
+  },
+
   NAME: {
     maxLength: 12,
     defaultName: "PLAYER",

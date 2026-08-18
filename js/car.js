@@ -18,5 +18,20 @@ const PlayerCar = (function () {
     return state.x * CONFIG.ROAD.roadWidth;
   }
 
-  return { state, reset, worldX };
+  function update(dt, keys) {
+    const c = CONFIG.CAR;
+
+    if (keys.up) {
+      state.speed += c.accel * dt;
+    } else if (keys.down) {
+      state.speed -= c.brakeDecel * dt;
+    } else {
+      state.speed -= c.naturalDecel * dt;
+    }
+
+    state.speed = Utils.clamp(state.speed, 0, c.maxSpeed);
+    state.z += state.speed * dt;
+  }
+
+  return { state, reset, worldX, update };
 })();
