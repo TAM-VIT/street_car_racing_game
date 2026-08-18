@@ -42,9 +42,33 @@ const Road = (function () {
     segments.length = 0;
   }
 
+  // Mostly straight track with occasional gentle curves, built from a
+  // repeating pattern until the configured total length is reached.
   function build() {
     reset();
-    addStraight(CONFIG.ROAD.totalSegments);
+
+    addStraight(120); // start straight, gives the player time to build speed
+
+    const CURVE = 2.2; // gentle - the brief calls for only a little curviness
+    const pattern = [
+      { straight: 200 },
+      { curve: { enter: 60, hold: 50, leave: 60, curve: CURVE } },
+      { straight: 220 },
+      { curve: { enter: 70, hold: 40, leave: 70, curve: -CURVE } },
+      { straight: 180 },
+      { curve: { enter: 50, hold: 60, leave: 50, curve: CURVE * 0.7 } },
+      { straight: 240 },
+    ];
+
+    let p = 0;
+    while (segments.length < CONFIG.ROAD.totalSegments - 100) {
+      const step = pattern[p % pattern.length];
+      if (step.straight) addStraight(step.straight);
+      else addCurve(step.curve.enter, step.curve.hold, step.curve.leave, step.curve.curve);
+      p++;
+    }
+
+    addStraight(CONFIG.ROAD.totalSegments - segments.length); // finish straight
   }
 
   return {
