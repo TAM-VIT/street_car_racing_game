@@ -23,10 +23,11 @@
   window.Game.ctx = ctx;
 
   Road.build();
+  PlayerCar.reset();
   window.Game.render = function (ctx, state) {
     const width = canvas.clientWidth;
     const height = canvas.clientHeight;
-    RoadRenderer.render(ctx, width, height, 0, 0);
+    RoadRenderer.render(ctx, width, height, PlayerCar.state.z, PlayerCar.worldX());
   };
 
   // Fixed timestep update with an accumulator so gameplay speed is
