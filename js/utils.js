@@ -23,4 +23,16 @@ const Utils = {
   percentRemaining(n, total) {
     return (n % total) / total;
   },
+
+  easeIn(a, b, percent) {
+    return a + (b - a) * Math.pow(percent, 2);
+  },
+
+  easeOut(a, b, percent) {
+    return a + (b - a) * (1 - Math.pow(1 - percent, 2));
+  },
+
+  easeInOut(a, b, percent) {
+    return a + (b - a) * (-Math.cos(percent * Math.PI) / 2 + 0.5);
+  },
 };

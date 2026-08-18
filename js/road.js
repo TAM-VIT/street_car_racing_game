@@ -24,6 +24,13 @@ const Road = (function () {
     for (let i = 0; i < numSegments; i++) addSegment(0, 0);
   }
 
+  // A gentle curve section: eased entry, a hold at full curvature, eased exit.
+  function addCurve(enter, hold, leave, curve) {
+    for (let i = 0; i < enter; i++) addSegment(Utils.easeIn(0, curve, i / enter), 0);
+    for (let i = 0; i < hold; i++) addSegment(curve, 0);
+    for (let i = 0; i < leave; i++) addSegment(Utils.easeInOut(curve, 0, i / leave), 0);
+  }
+
   function findSegment(z) {
     const total = segments.length * CONFIG.ROAD.segmentLength;
     let idx = Math.floor(z / CONFIG.ROAD.segmentLength) % segments.length;
@@ -44,6 +51,8 @@ const Road = (function () {
     segments,
     build,
     findSegment,
+    addStraight,
+    addCurve,
     get length() {
       return segments.length * CONFIG.ROAD.segmentLength;
     },

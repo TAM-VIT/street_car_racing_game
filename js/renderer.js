@@ -70,12 +70,16 @@ const RoadRenderer = (function () {
     const segments = Road.segments;
     if (segments.length === 0) return;
 
-    const baseIndex = Math.floor(playerZ / CONFIG.ROAD.segmentLength) % segments.length;
+    const segLen = CONFIG.ROAD.segmentLength;
+    const baseIndex = Math.floor(playerZ / segLen) % segments.length;
+    const basePercent = Utils.percentRemaining(playerZ, segLen);
     const cameraHeight = CONFIG.ROAD.cameraHeight;
     const cameraZ = playerZ;
     const cameraX = playerWorldX || 0;
 
     let maxY = height;
+    let x = 0;
+    let dx = -(segments[baseIndex].curve * basePercent);
 
     ctx.fillStyle = "#4d7fc9";
     ctx.fillRect(0, 0, width, height / 2);
@@ -83,7 +87,7 @@ const RoadRenderer = (function () {
     for (let n = 0; n < CONFIG.ROAD.drawDistance; n++) {
       const segment = segments[(baseIndex + n) % segments.length];
       const looped = baseIndex + n >= segments.length;
-      const loopOffsetZ = looped ? segments.length * CONFIG.ROAD.segmentLength : 0;
+      const loopOffsetZ = looped ? segments.length * segLen : 0;
 
       const p1 = {
         world: { x: 0, y: segment.p1.world.y, z: segment.p1.world.z + loopOffsetZ },
@@ -92,8 +96,11 @@ const RoadRenderer = (function () {
         world: { x: 0, y: segment.p2.world.y, z: segment.p2.world.z + loopOffsetZ },
       };
 
-      project(p1, cameraX, cameraHeight, cameraZ, width, height, CONFIG.ROAD.roadWidth);
-      project(p2, cameraX, cameraHeight, cameraZ, width, height, CONFIG.ROAD.roadWidth);
+      project(p1, cameraX - x, cameraHeight, cameraZ, width, height, CONFIG.ROAD.roadWidth);
+      project(p2, cameraX - x - dx, cameraHeight, cameraZ, width, height, CONFIG.ROAD.roadWidth);
+
+      x += dx;
+      dx += segment.curve;
 
       if (p2.screen.y >= p1.screen.y || p2.screen.y >= maxY) continue;
 
