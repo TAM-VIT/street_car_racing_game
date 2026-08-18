@@ -12,6 +12,8 @@ const PlayerCar = (function () {
     state.z = 0;
     state.x = 0;
     state.speed = 0;
+    state.offRoad = false;
+    state.controlDisruption = 0;
   }
 
   function worldX() {
@@ -38,6 +40,16 @@ const PlayerCar = (function () {
     const steer = Utils.lerp(c.steerRate, c.steerRate * c.steerHighSpeedFactor, speedRatio);
     if (keys.left) state.x -= steer * dt;
     if (keys.right) state.x += steer * dt;
+
+    // Off-road (past the road edge, onto grass/shoulder) slows the car and
+    // caps how fast it can go until the player steers back on.
+    state.offRoad = Math.abs(state.x) > 1;
+    if (state.offRoad) {
+      state.speed -= c.offRoadDecel * dt;
+      state.speed = Utils.clamp(state.speed, 0, c.offRoadMaxSpeed);
+    }
+
+    state.x = Utils.clamp(state.x, -2, 2);
   }
 
   return { state, reset, worldX, update };
