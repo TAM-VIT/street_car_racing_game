@@ -35,10 +35,9 @@
   }
 
   function render() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     if (window.Game.render) {
-      window.Game.render(ctx);
-    } else {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      window.Game.render(ctx, GameStateMachine.get());
     }
   }
 
