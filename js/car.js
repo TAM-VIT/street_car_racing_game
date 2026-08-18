@@ -37,7 +37,8 @@ const PlayerCar = (function () {
     // Steering scales with speed: tight and responsive when slow, a little
     // harder to place at high speed, so dodging obstacles takes skill.
     const speedRatio = state.speed / c.maxSpeed;
-    const steer = Utils.lerp(c.steerRate, c.steerRate * c.steerHighSpeedFactor, speedRatio);
+    let steer = Utils.lerp(c.steerRate, c.steerRate * c.steerHighSpeedFactor, speedRatio);
+    if (state.controlDisruption > 0) steer *= 0.4;
     if (keys.left) state.x -= steer * dt;
     if (keys.right) state.x += steer * dt;
 
@@ -55,6 +56,19 @@ const PlayerCar = (function () {
     }
 
     state.x = Utils.clamp(state.x, -2, 2);
+
+    if (state.controlDisruption > 0) state.controlDisruption -= dt;
+
+    const hit = World.checkCollision(state);
+    if (hit) applyCollision();
+  }
+
+  // Hitting an obstacle costs speed and briefly loosens steering, but stays
+  // recoverable so a booth player never feels the run is unfairly over.
+  function applyCollision() {
+    const c = CONFIG.CAR;
+    state.speed = Math.max(0, state.speed - c.obstacleSpeedPenalty);
+    state.controlDisruption = c.obstacleControlDisruption;
   }
 
   return { state, reset, worldX, update };

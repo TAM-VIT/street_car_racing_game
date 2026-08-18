@@ -44,5 +44,27 @@ const World = (function () {
     }
   }
 
-  return { obstacles, OBSTACLE_TYPES, placeObstacles };
+  // Checks the player's current road segment (and the one just ahead, since
+  // fast movement can skip a segment between fixed-timestep ticks) for an
+  // obstacle overlap. Returns the obstacle hit, or null.
+  function checkCollision(carState) {
+    const segLen = CONFIG.ROAD.segmentLength;
+    const base = Road.findSegment(carState.z);
+    const candidates = base.obstacles;
+
+    for (let i = 0; i < candidates.length; i++) {
+      const obstacle = candidates[i];
+      if (obstacle.hit) continue;
+      const dz = Math.abs(obstacle.z - carState.z);
+      if (dz > segLen) continue;
+      const dx = Math.abs(obstacle.x - carState.x);
+      if (dx < obstacle.radius + 0.09) {
+        obstacle.hit = true;
+        return obstacle;
+      }
+    }
+    return null;
+  }
+
+  return { obstacles, OBSTACLE_TYPES, placeObstacles, checkCollision };
 })();
