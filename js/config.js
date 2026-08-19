@@ -35,6 +35,8 @@ const CONFIG = {
     baseSpeedFactor: 0.86, // TAM's speed relative to player max speed, before rubber banding
     rubberBandStrength: 0.0000045, // how strongly the gap (world units) shifts TAM's target speed
     rubberBandMax: 0.16, // cap on the rubber band adjustment
+    avoidanceSkill: 0.9, // 0-1, how decisively TAM dodges a spotted obstacle
+    mistakeFrequency: 0.35, // chance of a brief mistake each pace-check interval
   },
 
   NAME: {
