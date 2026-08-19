@@ -19,8 +19,9 @@ const TamCar = (function () {
     return state.x * CONFIG.ROAD.roadWidth;
   }
 
-  function update(dt) {
+  function update(dt, playerZ) {
     const c = CONFIG.CAR;
+    const t = CONFIG.TAM;
     const segment = Road.findSegment(state.z);
 
     // Follow a sensible racing line: ease toward the inside of the curve
@@ -28,7 +29,14 @@ const TamCar = (function () {
     const targetX = Utils.clamp(-segment.curve * 0.12, -0.6, 0.6);
     state.x = Utils.lerp(state.x, targetX, Math.min(1, dt * 1.5));
 
-    state.speed = Utils.clamp(state.speed + c.accel * 0.7 * dt, 0, c.maxSpeed * 0.86);
+    // Rubber banding: TAM eases off when well ahead of the player and
+    // pushes harder when well behind, so races stay close without ever
+    // looking obviously scripted.
+    const gap = state.z - playerZ;
+    const rubberBand = Utils.clamp(-gap * t.rubberBandStrength, -t.rubberBandMax, t.rubberBandMax);
+    const targetSpeed = c.maxSpeed * (t.baseSpeedFactor + rubberBand);
+
+    state.speed = Utils.lerp(state.speed, Utils.clamp(targetSpeed, 0, c.maxSpeed * 0.98), Math.min(1, dt * 0.8));
     state.z += state.speed * dt;
   }
 

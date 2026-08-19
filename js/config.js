@@ -31,6 +31,12 @@ const CONFIG = {
     obstacleControlDisruption: 0.6, // seconds of reduced steering after a hit
   },
 
+  TAM: {
+    baseSpeedFactor: 0.86, // TAM's speed relative to player max speed, before rubber banding
+    rubberBandStrength: 0.0000045, // how strongly the gap (world units) shifts TAM's target speed
+    rubberBandMax: 0.16, // cap on the rubber band adjustment
+  },
+
   NAME: {
     maxLength: 12,
     defaultName: "PLAYER",

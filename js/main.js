@@ -45,7 +45,7 @@
   function update(dt) {
     if (GameStateMachine.get() === GameState.RACE) {
       PlayerCar.update(dt, Input.keys);
-      TamCar.update(dt);
+      TamCar.update(dt, PlayerCar.state.z);
     }
     if (window.Game.update) window.Game.update(dt);
   }
