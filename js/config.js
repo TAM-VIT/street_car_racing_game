@@ -20,6 +20,7 @@ const CONFIG = {
     drawDistance: 300, // segments drawn ahead
     tamFadeDistance: 9000, // world units within which TAM fades so obstacles stay visible
     tamMinOpacity: 0.35,
+    tamFadeLateral: 0.55, // lateral gap (road half-widths) beyond which TAM never fades
   },
 
   CAR: {

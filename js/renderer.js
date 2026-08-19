@@ -219,9 +219,13 @@ const RoadRenderer = (function () {
       const carX = tamPoint.screen.x + tam.x * tamPoint.screen.w;
 
       // Running right behind TAM would otherwise hide the obstacles the
-      // player needs to dodge. Fading TAM as it fills the view keeps the
-      // road ahead readable while still showing exactly where TAM is.
-      const fade = Utils.clamp(dz / CONFIG.ROAD.tamFadeDistance, CONFIG.ROAD.tamMinOpacity, 1);
+      // player needs to dodge. TAM fades as it fills the view, but only while
+      // it is actually in the player's line: off to one side it blocks
+      // nothing, and fading it there just looks washed out.
+      const lateral = Math.abs(tam.x - playerXFrac);
+      const inLine = Utils.clamp(1 - lateral / CONFIG.ROAD.tamFadeLateral, 0, 1);
+      const near = 1 - Utils.clamp(dz / CONFIG.ROAD.tamFadeDistance, 0, 1);
+      const fade = 1 - (1 - CONFIG.ROAD.tamMinOpacity) * near * inLine;
       ctx.save();
       ctx.globalAlpha = fade;
       drawCarSprite(ctx, carX, tamPoint.screen.y, tamPoint.screen.w * 0.55, TAM_COLOR, null, TAM_MODEL);
