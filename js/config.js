@@ -11,7 +11,9 @@ const CONFIG = {
     roadWidth: 2000, // half-width of the road in world units
     rumbleLength: 3, // segments per rumble strip stripe
     lanes: 3,
-    totalSegments: 1400, // ~60-90s race length at full speed, single config value
+    // Single value controlling race length. At CAR.maxSpeed this works out
+    // to roughly 68 seconds: totalSegments * segmentLength / maxSpeed.
+    totalSegments: 7500,
     fieldOfView: 100,
     cameraHeight: 1000,
     drawDistance: 300, // segments drawn ahead
@@ -59,6 +61,7 @@ const CONFIG = {
 
   HUD: {
     displayTopSpeedKph: 320, // speed shown on the HUD when at max speed
+    metresPerWorldUnit: 90, // converts world units to the metre figures shown to the player
   },
 
   NAME: {

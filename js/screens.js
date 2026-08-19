@@ -104,6 +104,55 @@ const Screens = (function () {
     GameStateMachine.set(GameState.RACE);
   }
 
+  let bestTime = null; // session only, resets on reload
+
+  function formatTime(seconds) {
+    const m = Math.floor(seconds / 60);
+    const s = Math.floor(seconds % 60);
+    const cs = Math.floor((seconds * 100) % 100);
+    return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}.${String(cs).padStart(2, "0")}`;
+  }
+
+  function addStat(list, label, value) {
+    const dt = document.createElement("dt");
+    dt.textContent = label;
+    const dd = document.createElement("dd");
+    dd.textContent = value;
+    const wrap = document.createElement("div");
+    wrap.className = "stat";
+    wrap.append(dt, dd);
+    list.appendChild(wrap);
+  }
+
+  function renderResults() {
+    const won = Race.state.winner === "player";
+    const heading = document.getElementById("result-heading");
+    const stats = document.getElementById("result-stats");
+    const summary = document.getElementById("result-summary");
+
+    // The player name is user input, so it is only ever set via textContent.
+    heading.textContent = won
+      ? `${Selection.state.name} wins`
+      : "TAM wins";
+    heading.className = `heading ${won ? "outcome-win" : "outcome-loss"}`;
+
+    const time = Race.state.playerFinishTime || Race.state.elapsed;
+    if (won && (bestTime === null || time < bestTime)) bestTime = time;
+
+    stats.replaceChildren();
+    addStat(stats, "Your time", formatTime(time));
+    addStat(stats, "Position", won ? "1st" : "2nd");
+    addStat(stats, "Obstacles hit", String(PlayerCar.state.hitCount));
+    addStat(stats, "Session best", bestTime === null ? "--:--.--" : formatTime(bestTime));
+
+    const gapMetres = Math.round(
+      Math.abs(PlayerCar.state.z - TamCar.state.z) / CONFIG.HUD.metresPerWorldUnit
+    );
+    summary.textContent = won
+      ? `You crossed the line ${gapMetres} m ahead of TAM.`
+      : `TAM took it by ${gapMetres} m. Run it back.`;
+  }
+
   function init() {
     buildChips();
     renderPreview();
@@ -121,7 +170,10 @@ const Screens = (function () {
       e.stopPropagation();
     });
 
-    GameStateMachine.onChange((next) => showFor(next));
+    GameStateMachine.onChange((next) => {
+      if (next === GameState.RESULTS) renderResults();
+      showFor(next);
+    });
     showFor(GameStateMachine.get());
   }
 
