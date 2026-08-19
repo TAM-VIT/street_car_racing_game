@@ -88,23 +88,30 @@ const World = (function () {
     }
   }
 
-  // Checks the player's current road segment (and the one just ahead, since
-  // fast movement can skip a segment between fixed-timestep ticks) for an
-  // obstacle overlap. Returns the obstacle hit, or null.
-  function checkCollision(carState) {
-    const segLen = CONFIG.ROAD.segmentLength;
-    const base = Road.findSegment(carState.z);
-    const candidates = base.obstacles;
+  const CAR_HALF_WIDTH = 0.09;
 
-    for (let i = 0; i < candidates.length; i++) {
-      const obstacle = candidates[i];
-      if (obstacle.hit) continue;
-      const dz = Math.abs(obstacle.z - carState.z);
-      if (dz > segLen) continue;
-      const dx = Math.abs(obstacle.x - carState.x);
-      if (dx < obstacle.radius + 0.09) {
-        obstacle.hit = true;
-        return obstacle;
+  // Sweeps every segment the car passed through this tick, not just the one
+  // it landed on. At full speed the car covers ~367 world units per tick
+  // against a 200 unit segment, so checking only the current segment lets it
+  // tunnel straight through obstacles without ever registering a hit.
+  function checkCollision(carState, fromZ) {
+    const segLen = CONFIG.ROAD.segmentLength;
+    const segments = Road.segments;
+    const start = Math.floor(Math.min(fromZ, carState.z) / segLen);
+    const end = Math.floor(carState.z / segLen);
+
+    for (let n = start; n <= end; n++) {
+      let idx = n % segments.length;
+      if (idx < 0) idx += segments.length;
+      const candidates = segments[idx].obstacles;
+
+      for (let i = 0; i < candidates.length; i++) {
+        const obstacle = candidates[i];
+        if (obstacle.hit) continue;
+        if (Math.abs(obstacle.x - carState.x) < obstacle.radius + CAR_HALF_WIDTH) {
+          obstacle.hit = true;
+          return obstacle;
+        }
       }
     }
     return null;

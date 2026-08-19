@@ -23,6 +23,7 @@ const PlayerCar = (function () {
 
   function update(dt, keys) {
     const c = CONFIG.CAR;
+    const previousZ = state.z;
 
     if (keys.up) {
       state.speed += c.accel * dt;
@@ -60,7 +61,7 @@ const PlayerCar = (function () {
 
     if (state.controlDisruption > 0) state.controlDisruption -= dt;
 
-    const hit = World.checkCollision(state);
+    const hit = World.checkCollision(state, previousZ);
     if (hit) {
       applyCollision();
       state.hitCount++;
