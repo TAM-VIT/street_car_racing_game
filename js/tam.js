@@ -90,11 +90,24 @@ const TamCar = (function () {
     // Rubber banding: TAM eases off when well ahead of the player and
     // pushes harder when well behind, so races stay close without ever
     // looking obviously scripted.
+    //
+    // The effect fades out over the closing stretch. Held at full strength
+    // to the line it decides the winner by itself, which makes the finish
+    // feel scripted and pins the win rate to whichever car is marginally
+    // faster. Fading it hands the endgame back to actual pace and the
+    // mistakes both drivers made along the way.
     const gap = state.z - playerZ;
-    const rubberBand = Utils.clamp(-gap * t.rubberBandStrength, -t.rubberBandMax, t.rubberBandMax);
+    const lead = Math.max(Race.progress(state.z), Race.progress(playerZ));
+    const fade = 1 - Utils.clamp((lead - t.rubberBandFadeStart) / (1 - t.rubberBandFadeStart), 0, 1);
+    const rubberBand =
+      Utils.clamp(-gap * t.rubberBandStrength, -t.rubberBandMax, t.rubberBandMax) * fade;
     const targetSpeed = c.maxSpeed * (t.baseSpeedFactor + rubberBand + state.paceNoise) * mistakeFactor;
 
-    state.speed = Utils.lerp(state.speed, Utils.clamp(targetSpeed, 0, c.maxSpeed * 0.98), Math.min(1, dt * 0.8));
+    // The ceiling sits above the player's max speed on purpose: without it
+    // rubber banding could never claw back a deficit, and TAM would be
+    // mathematically unable to win against a player who holds the throttle.
+    const ceiling = c.maxSpeed * t.maxSpeedFactor;
+    state.speed = Utils.lerp(state.speed, Utils.clamp(targetSpeed, 0, ceiling), Math.min(1, dt * t.speedResponse));
     state.z += state.speed * dt;
   }
 

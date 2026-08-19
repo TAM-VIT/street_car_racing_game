@@ -37,11 +37,17 @@ const CONFIG = {
   // baseSpeedFactor or rubberBandStrength to make TAM harder to shake;
   // raise mistakeFrequency or lower avoidanceSkill to make TAM easier.
   TAM: {
-    baseSpeedFactor: 0.86, // TAM's speed relative to player max speed, before rubber banding
+    baseSpeedFactor: 0.976, // TAM's speed relative to player max speed, before rubber banding
+    maxSpeedFactor: 1.12, // TAM's hard speed ceiling, relative to player max speed
+    speedResponse: 0.8, // how quickly TAM's speed eases toward its target
     rubberBandStrength: 0.0000045, // how strongly the gap (world units) shifts TAM's target speed
-    rubberBandMax: 0.16, // cap on the rubber band adjustment
+    rubberBandMax: 0.13, // cap on the rubber band adjustment
+    rubberBandFadeStart: 0.75, // race progress at which rubber banding starts fading out
     avoidanceSkill: 0.9, // 0-1, how decisively TAM dodges a spotted obstacle
-    avoidanceLookaheadSegments: 10, // how many segments ahead TAM scans for obstacles
+    // Must be far enough ahead that TAM can actually complete the dodge:
+    // at max speed 90 segments is ~0.8s of warning, and steering covers
+    // roughly one lane in that time.
+    avoidanceLookaheadSegments: 90,
     avoidanceTriggerMargin: 0.25, // extra clearance added to an obstacle's radius before TAM reacts
     steerLerpSpeed: 2.2, // how quickly TAM's lane position eases toward its target line
     mistakeFrequency: 0.35, // chance of a brief mistake each pace-check interval
