@@ -280,9 +280,8 @@ const RoadRenderer = (function () {
     const tyreW = w * (m.openWheel ? 0.15 : 0.12);
     const tyreH = h * (m.openWheel ? 0.42 : 0.30);
     const tyreX = w * (m.openWheel ? 0.42 : m.bodyWidth - 0.03);
-    ctx.fillStyle = "#12151d";
-    roundRect(ctx, x - tyreX - tyreW / 2, y - tyreH, tyreW, tyreH, tyreW * 0.28);
-    roundRect(ctx, x + tyreX - tyreW / 2, y - tyreH, tyreW, tyreH, tyreW * 0.28);
+    drawTyre(ctx, x - tyreX, y, tyreW, tyreH);
+    drawTyre(ctx, x + tyreX, y, tyreW, tyreH);
 
     // Body shell: wide at the arches, tapering to the roof.
     const bw = w * m.bodyWidth;
@@ -297,9 +296,10 @@ const RoadRenderer = (function () {
     grad.addColorStop(1, mid);
     ctx.fillStyle = grad;
 
-    // Straight edges rather than curves: the hard shoulder line and the
-    // sharp taper to the roof are what make the silhouette read as a
-    // supercar instead of a hatchback.
+    // Body shell drawn as three shaded faces rather than one flat polygon:
+    // a lit upper deck, the vertical rear panel, and darker side haunches.
+    // The tonal split between them is what gives the flat canvas shape a
+    // solid, three-dimensional read at speed.
     ctx.beginPath();
     ctx.moveTo(x - bw, y);
     ctx.lineTo(x - bw, y - bh * 0.42);
@@ -312,17 +312,68 @@ const RoadRenderer = (function () {
     ctx.closePath();
     ctx.fill();
 
-    // Shoulder crease catching the light along the top of the arches.
-    ctx.strokeStyle = shade(color, 0.42);
-    ctx.lineWidth = Math.max(1, h * 0.018);
+    // Upper deck catching the sky: brighter, and angled inward.
+    const deck = ctx.createLinearGradient(0, y - rh, 0, y - bh);
+    deck.addColorStop(0, shade(color, 0.5));
+    deck.addColorStop(1, light);
+    ctx.fillStyle = deck;
     ctx.beginPath();
     ctx.moveTo(x - sw, y - bh);
+    ctx.lineTo(x - rw, y - rh);
+    ctx.lineTo(x + rw, y - rh);
     ctx.lineTo(x + sw, y - bh);
+    ctx.closePath();
+    ctx.fill();
+
+    // Side haunches fall away from the light, darkening toward the arches.
+    const hipL = ctx.createLinearGradient(x - bw, 0, x - sw * 0.55, 0);
+    hipL.addColorStop(0, shade(color, -0.5));
+    hipL.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = hipL;
+    ctx.beginPath();
+    ctx.moveTo(x - bw, y);
+    ctx.lineTo(x - bw, y - bh * 0.42);
+    ctx.lineTo(x - sw, y - bh);
+    ctx.lineTo(x - sw * 0.55, y - bh);
+    ctx.lineTo(x - sw * 0.55, y);
+    ctx.closePath();
+    ctx.fill();
+
+    const hipR = ctx.createLinearGradient(x + bw, 0, x + sw * 0.55, 0);
+    hipR.addColorStop(0, shade(color, -0.5));
+    hipR.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = hipR;
+    ctx.beginPath();
+    ctx.moveTo(x + bw, y);
+    ctx.lineTo(x + bw, y - bh * 0.42);
+    ctx.lineTo(x + sw, y - bh);
+    ctx.lineTo(x + sw * 0.55, y - bh);
+    ctx.lineTo(x + sw * 0.55, y);
+    ctx.closePath();
+    ctx.fill();
+
+    // Specular highlight running along the shoulder crease.
+    ctx.strokeStyle = shade(color, 0.62);
+    ctx.lineWidth = Math.max(1, h * 0.022);
+    ctx.beginPath();
+    ctx.moveTo(x - sw * 0.98, y - bh);
+    ctx.lineTo(x + sw * 0.98, y - bh);
     ctx.stroke();
+
+    // Ambient occlusion where the body meets the road.
+    const ao = ctx.createLinearGradient(0, y - bh * 0.3, 0, y);
+    ao.addColorStop(0, "rgba(0,0,0,0)");
+    ao.addColorStop(1, "rgba(0,0,0,0.45)");
+    ctx.fillStyle = ao;
+    ctx.fillRect(x - bw, y - bh * 0.3, bw * 2, bh * 0.3);
 
     // Glass
     const gw = w * m.glass.width;
-    ctx.fillStyle = "rgba(14, 20, 32, 0.9)";
+    const glassGrad = ctx.createLinearGradient(0, y - h * m.glass.top, 0, y - h * m.glass.bottom);
+    glassGrad.addColorStop(0, "#38506e");
+    glassGrad.addColorStop(0.45, "#16203180");
+    glassGrad.addColorStop(1, "#0b111c");
+    ctx.fillStyle = glassGrad;
     ctx.beginPath();
     ctx.moveTo(x - gw, y - h * m.glass.bottom);
     ctx.lineTo(x - gw * 0.82, y - h * m.glass.top);
@@ -331,12 +382,29 @@ const RoadRenderer = (function () {
     ctx.closePath();
     ctx.fill();
 
+    // Sky reflection streak across the upper glass.
+    ctx.fillStyle = "rgba(190, 220, 255, 0.22)";
+    ctx.beginPath();
+    ctx.moveTo(x - gw * 0.78, y - h * (m.glass.top - 0.015));
+    ctx.lineTo(x + gw * 0.78, y - h * (m.glass.top - 0.015));
+    ctx.lineTo(x + gw * 0.55, y - h * (m.glass.top - 0.055));
+    ctx.lineTo(x - gw * 0.55, y - h * (m.glass.top - 0.055));
+    ctx.closePath();
+    ctx.fill();
+
     // Tail light bar
     const lw = w * m.lightWidth;
     const ly = y - h * m.lightY;
+    ctx.save();
+    ctx.shadowColor = "rgba(255, 47, 77, 0.9)";
+    ctx.shadowBlur = Math.max(2, h * 0.14);
     ctx.fillStyle = "#ff2f4d";
     roundRect(ctx, x - bw * 0.92, ly, lw, h * 0.06, h * 0.02);
     roundRect(ctx, x + bw * 0.92 - lw, ly, lw, h * 0.06, h * 0.02);
+    ctx.restore();
+    ctx.fillStyle = "rgba(255, 190, 200, 0.85)";
+    roundRect(ctx, x - bw * 0.92, ly, lw, h * 0.02, h * 0.01);
+    roundRect(ctx, x + bw * 0.92 - lw, ly, lw, h * 0.02, h * 0.01);
 
     // Diffuser and exhausts
     const dh = h * m.diffuser;
@@ -378,6 +446,17 @@ const RoadRenderer = (function () {
     ctx.shadowBlur = 4;
     ctx.fillText(label, x, top);
     ctx.restore();
+  }
+
+  function drawTyre(ctx, cx, y, w, h) {
+    const grad = ctx.createLinearGradient(cx - w / 2, 0, cx + w / 2, 0);
+    grad.addColorStop(0, "#05070b");
+    grad.addColorStop(0.45, "#22262f");
+    grad.addColorStop(1, "#0a0d13");
+    ctx.fillStyle = grad;
+    roundRect(ctx, cx - w / 2, y - h, w, h, w * 0.3);
+    ctx.fillStyle = "rgba(255,255,255,0.10)";
+    roundRect(ctx, cx - w * 0.22, y - h * 0.86, w * 0.2, h * 0.5, w * 0.1);
   }
 
   function roundRect(ctx, x, y, w, h, r) {

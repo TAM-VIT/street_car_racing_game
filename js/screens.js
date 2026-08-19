@@ -154,12 +154,73 @@ const Screens = (function () {
     addStat(stats, "Obstacles hit", String(PlayerCar.state.hitCount));
     addStat(stats, "Session best", bestTime === null ? "--:--.--" : formatTime(bestTime));
 
-    const gapMetres = Math.round(
-      Math.abs(PlayerCar.state.z - TamCar.state.z) / CONFIG.HUD.metresPerWorldUnit
-    );
+    const gapSeconds = Math.abs(time - (Race.state.tamFinishTime || time));
     summary.textContent = won
-      ? `You crossed the line ${gapMetres} m ahead of TAM.`
-      : `TAM took it by ${gapMetres} m. Run it back.`;
+      ? `You crossed the line ${gapSeconds.toFixed(2)}s ahead of TAM.`
+      : `TAM took it by ${gapSeconds.toFixed(2)}s. Run it back.`;
+
+    renderLeaderboard(time);
+  }
+
+  // Finishing order for this race, plus every result from the session so the
+  // booth builds a running scoreboard across visitors.
+  const sessionResults = [];
+
+  function renderLeaderboard(playerTime) {
+    const list = document.getElementById("result-leaderboard");
+    list.replaceChildren();
+
+    sessionResults.push({ name: Selection.state.name, time: playerTime });
+    sessionResults.sort((a, b) => a.time - b.time);
+
+    const race = [
+      { name: Selection.state.name, time: playerTime, isPlayer: true },
+      { name: "TAM", time: Race.state.tamFinishTime || playerTime, isPlayer: false },
+    ].sort((a, b) => a.time - b.time);
+
+    race.forEach((entry, i) => {
+      const li = document.createElement("li");
+      li.className = "lb-row" + (entry.isPlayer ? " lb-you" : "");
+
+      const pos = document.createElement("span");
+      pos.className = "lb-pos";
+      pos.textContent = String(i + 1);
+
+      const name = document.createElement("span");
+      name.className = "lb-name";
+      // User-supplied name: always textContent, never innerHTML.
+      name.textContent = entry.name;
+
+      const t = document.createElement("span");
+      t.className = "lb-time";
+      t.textContent = formatTime(entry.time);
+
+      li.append(pos, name, t);
+      list.appendChild(li);
+    });
+
+    if (sessionResults.length > 1) {
+      const head = document.createElement("li");
+      head.className = "lb-head";
+      head.textContent = "Best times this session";
+      list.appendChild(head);
+
+      sessionResults.slice(0, 3).forEach((entry, i) => {
+        const li = document.createElement("li");
+        li.className = "lb-row lb-session";
+        const pos = document.createElement("span");
+        pos.className = "lb-pos";
+        pos.textContent = String(i + 1);
+        const name = document.createElement("span");
+        name.className = "lb-name";
+        name.textContent = entry.name;
+        const t = document.createElement("span");
+        t.className = "lb-time";
+        t.textContent = formatTime(entry.time);
+        li.append(pos, name, t);
+        list.appendChild(li);
+      });
+    }
   }
 
   function init() {
