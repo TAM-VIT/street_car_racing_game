@@ -217,13 +217,25 @@ const RoadRenderer = (function () {
     if (dz > 10 && dz < drawDist) {
       project(tamPoint, 0, cameraHeight, cameraZ, tam.z, width, height, CONFIG.ROAD.roadWidth);
       const carX = tamPoint.screen.x + tam.x * tamPoint.screen.w;
-      drawCarSprite(ctx, carX, tamPoint.screen.y, tamPoint.screen.w * 0.55, TAM_COLOR, "TAM", TAM_MODEL);
+
+      // Running right behind TAM would otherwise hide the obstacles the
+      // player needs to dodge. Fading TAM as it fills the view keeps the
+      // road ahead readable while still showing exactly where TAM is.
+      const fade = Utils.clamp(dz / CONFIG.ROAD.tamFadeDistance, CONFIG.ROAD.tamMinOpacity, 1);
+      ctx.save();
+      ctx.globalAlpha = fade;
+      drawCarSprite(ctx, carX, tamPoint.screen.y, tamPoint.screen.w * 0.55, TAM_COLOR, null, TAM_MODEL);
+      ctx.restore();
+      // The name tag stays fully opaque so TAM is never ambiguous.
+      drawCarLabel(ctx, carX, tamPoint.screen.y, tamPoint.screen.w * 0.55, "TAM", TAM_MODEL);
     }
 
-    // Sits above the bottom HUD bar so the two never overlap.
-    const py = height * 0.83;
-    const pw = width * 0.15;
-    const px = width / 2 + playerXFrac * (width * 0.13);
+    // Sized from whichever dimension is tighter, so the car does not balloon
+    // on an ultra-wide booth monitor or overrun the HUD on a short one, and
+    // parked above the bottom bar so the two never overlap.
+    const pw = Math.min(width * 0.15, height * 0.26);
+    const py = height - Math.max(height * 0.15, 96);
+    const px = width / 2 + playerXFrac * Math.min(width * 0.13, height * 0.22);
     drawCarSprite(ctx, px, py, pw, Selection.colorHex(), null, Selection.model());
   }
 
@@ -346,19 +358,26 @@ const RoadRenderer = (function () {
 
     ctx.restore();
 
-    if (label) {
-      // Capped so the tag stays a readable marker instead of ballooning
-      // across the screen when TAM is right in front of the player.
-      const size = Utils.clamp(h * 0.3, 9, 20);
-      const top = y - h * Math.max(m.roofHeight, m.wing.height) - size * 0.6;
-      ctx.fillStyle = "#ffffff";
-      ctx.font = `bold ${size}px sans-serif`;
-      ctx.textAlign = "center";
-      ctx.shadowColor = "rgba(0,0,0,0.75)";
-      ctx.shadowBlur = 4;
-      ctx.fillText(label, x, top);
-      ctx.shadowBlur = 0;
-    }
+    if (label) drawCarLabel(ctx, x, y, w, label, m);
+  }
+
+  // Drawn separately from the body so it can stay fully opaque even when the
+  // car itself is faded out.
+  function drawCarLabel(ctx, x, y, w, label, model) {
+    const m = model || CarCatalog.MODELS[0];
+    const h = w * 0.5;
+    // Capped so the tag stays a readable marker instead of ballooning
+    // across the screen when TAM is right in front of the player.
+    const size = Utils.clamp(h * 0.3, 9, 20);
+    const top = y - h * Math.max(m.roofHeight, m.wing.height) - size * 0.6;
+    ctx.save();
+    ctx.fillStyle = "#ffffff";
+    ctx.font = `bold ${size}px sans-serif`;
+    ctx.textAlign = "center";
+    ctx.shadowColor = "rgba(0,0,0,0.75)";
+    ctx.shadowBlur = 4;
+    ctx.fillText(label, x, top);
+    ctx.restore();
   }
 
   function roundRect(ctx, x, y, w, h, r) {
@@ -417,34 +436,125 @@ const RoadRenderer = (function () {
   }
 
   function drawObstacleShape(ctx, x, y, w, obstacle) {
-    const type = obstacle.type;
-    const size = Math.max(1, obstacle.radius * w * 2);
+    const size = Math.max(2, obstacle.radius * w * 2);
+    if (obstacle.type === "cone") drawCone(ctx, x, y, size);
+    else if (obstacle.type === "oil") drawOilDrum(ctx, x, y, size);
+    else drawBarrier(ctx, x, y, size);
+  }
 
-    if (type === "cone") {
-      const h = size * 1.3;
-      ctx.fillStyle = "#ff7a1a";
+  function drawCone(ctx, x, y, size) {
+    const h = size * 1.35;
+    // Base pad
+    ctx.fillStyle = "#1d2029";
+    ctx.beginPath();
+    ctx.ellipse(x, y, size * 0.55, size * 0.14, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // Cone body
+    ctx.fillStyle = "#ff7a1a";
+    ctx.beginPath();
+    ctx.moveTo(x, y - h);
+    ctx.lineTo(x + size * 0.42, y - size * 0.06);
+    ctx.lineTo(x - size * 0.42, y - size * 0.06);
+    ctx.closePath();
+    ctx.fill();
+    // Reflective bands
+    ctx.fillStyle = "#f7f7f7";
+    band(ctx, x, y, h, size, 0.40, 0.11);
+    band(ctx, x, y, h, size, 0.62, 0.09);
+    // Lit edge
+    ctx.fillStyle = "rgba(255,255,255,0.28)";
+    ctx.beginPath();
+    ctx.moveTo(x, y - h);
+    ctx.lineTo(x - size * 0.12, y - size * 0.06);
+    ctx.lineTo(x - size * 0.42, y - size * 0.06);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  // A horizontal stripe clipped to the cone's taper at a given height.
+  function band(ctx, x, y, h, size, t, thickness) {
+    const wTop = size * 0.42 * (1 - t - thickness);
+    const wBot = size * 0.42 * (1 - t);
+    const yTop = y - h * (t + thickness);
+    const yBot = y - h * t;
+    ctx.beginPath();
+    ctx.moveTo(x - wTop, yTop);
+    ctx.lineTo(x + wTop, yTop);
+    ctx.lineTo(x + wBot, yBot);
+    ctx.lineTo(x - wBot, yBot);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  // An upright hazard drum reads far better at speed than a flat dark
+  // puddle, which was indistinguishable from a shadow on the road.
+  function drawOilDrum(ctx, x, y, size) {
+    const w = size * 0.8;
+    const h = size * 1.25;
+    const rx = w / 2;
+    const ry = Math.max(1, h * 0.1);
+    const top = y - h;
+
+    ctx.fillStyle = "rgba(0,0,0,0.3)";
+    ctx.beginPath();
+    ctx.ellipse(x, y, rx * 1.15, ry * 0.8, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    const body = ctx.createLinearGradient(x - rx, 0, x + rx, 0);
+    body.addColorStop(0, "#8c2f12");
+    body.addColorStop(0.42, "#e0641f");
+    body.addColorStop(1, "#7a2810");
+    ctx.fillStyle = body;
+    ctx.fillRect(x - rx, top, w, h);
+
+    ctx.fillStyle = "#20242e";
+    ctx.fillRect(x - rx, top + h * 0.26, w, h * 0.1);
+    ctx.fillRect(x - rx, top + h * 0.62, w, h * 0.1);
+
+    ctx.fillStyle = "#f0a33c";
+    ctx.beginPath();
+    ctx.ellipse(x, top, rx, ry, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#c07826";
+    ctx.beginPath();
+    ctx.ellipse(x, top, rx * 0.62, ry * 0.62, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function drawBarrier(ctx, x, y, size) {
+    const w = size * 2.1;
+    const h = size * 0.62;
+    const top = y - h;
+    const legH = h * 0.32;
+
+    ctx.fillStyle = "#2a2f3b";
+    ctx.fillRect(x - w * 0.42, y - legH, w * 0.06, legH);
+    ctx.fillRect(x + w * 0.36, y - legH, w * 0.06, legH);
+
+    ctx.fillStyle = "#f2f2f2";
+    ctx.fillRect(x - w / 2, top, w, h * 0.72);
+
+    // Diagonal hazard chevrons
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(x - w / 2, top, w, h * 0.72);
+    ctx.clip();
+    ctx.fillStyle = "#d93a3a";
+    const step = w / 5;
+    for (let i = -1; i < 6; i++) {
       ctx.beginPath();
-      ctx.moveTo(x, y - h);
-      ctx.lineTo(x + size / 2, y);
-      ctx.lineTo(x - size / 2, y);
+      ctx.moveTo(x - w / 2 + i * step, top + h * 0.72);
+      ctx.lineTo(x - w / 2 + i * step + step * 0.5, top + h * 0.72);
+      ctx.lineTo(x - w / 2 + i * step + step * 0.5 + h * 0.72, top);
+      ctx.lineTo(x - w / 2 + i * step + h * 0.72, top);
       ctx.closePath();
       ctx.fill();
-      ctx.fillStyle = "#f2f2f2";
-      ctx.fillRect(x - size / 2, y - h * 0.35, size, h * 0.12);
-    } else if (type === "oil") {
-      ctx.fillStyle = "rgba(15,15,20,0.85)";
-      ctx.beginPath();
-      ctx.ellipse(x, y - size * 0.05, size * 0.7, size * 0.28, 0, 0, Math.PI * 2);
-      ctx.fill();
-    } else {
-      const h = size * 0.55;
-      ctx.fillStyle = "#d94b4b";
-      ctx.fillRect(x - size / 2, y - h, size, h);
-      ctx.fillStyle = "#f2f2f2";
-      for (let i = 0; i < 4; i++) {
-        ctx.fillRect(x - size / 2 + (i * size) / 4, y - h, size / 8, h);
-      }
     }
+    ctx.restore();
+
+    ctx.strokeStyle = "#20242e";
+    ctx.lineWidth = Math.max(1, size * 0.03);
+    ctx.strokeRect(x - w / 2, top, w, h * 0.72);
   }
 
   function drawBillboard(ctx, x, y, w, spriteX) {

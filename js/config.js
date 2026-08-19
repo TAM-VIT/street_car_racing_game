@@ -18,6 +18,8 @@ const CONFIG = {
     fieldOfView: 100,
     cameraHeight: 1000,
     drawDistance: 300, // segments drawn ahead
+    tamFadeDistance: 9000, // world units within which TAM fades so obstacles stay visible
+    tamMinOpacity: 0.35,
   },
 
   CAR: {
@@ -29,7 +31,10 @@ const CONFIG = {
     offRoadMaxSpeed: 9000, // speed cap while off the road
     steerRate: 2.2, // lateral units/sec at low speed
     steerHighSpeedFactor: 0.45, // multiplier applied to steerRate at max speed
-    centrifugalStrength: 0.0009, // curve push per unit of curve * speed
+    // Curve push per unit of curve * speed. Must stay well under steerRate:
+    // the pull should be a drift the player leans against, never a force
+    // that outruns steering and drags the car off the road on its own.
+    centrifugalStrength: 0.00004,
     obstacleSpeedPenalty: 7000, // speed lost instantly on collision
     obstacleControlDisruption: 0.6, // seconds of reduced steering after a hit
   },

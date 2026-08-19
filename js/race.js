@@ -49,9 +49,16 @@ const Race = (function () {
       state.tamFinishTime = state.elapsed;
     }
 
-    if (state.playerFinishTime || state.tamFinishTime) {
+    // TAM crossing the line does not end the race. Losing the lead is not a
+    // reason to have the run cut short mid-corner: the player always gets to
+    // drive their own race to the finish, and the result is shown then.
+    if (state.tamFinishTime && !state.winner) {
+      state.winner = "tam";
+    }
+
+    if (state.playerFinishTime) {
+      if (!state.winner) state.winner = "player";
       state.finished = true;
-      state.winner = state.playerFinishTime ? "player" : "tam";
       Audio.playFinish();
       GameStateMachine.set(GameState.RESULTS);
     }

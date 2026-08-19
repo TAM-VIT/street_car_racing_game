@@ -53,7 +53,9 @@
       // Control unlocks only once the countdown has finished.
       const racing = Race.state.countdown <= 0 && !Race.state.finished;
       PlayerCar.update(dt, racing ? Input.keys : NO_KEYS);
-      if (racing) TamCar.update(dt, PlayerCar.state.z);
+      // TAM stops at the line once it has finished while the player keeps
+      // driving their own race to the end.
+      if (racing && !Race.state.tamFinishTime) TamCar.update(dt, PlayerCar.state.z);
       Audio.updateEngine(PlayerCar.state.speed / CONFIG.CAR.maxSpeed);
     }
     if (window.Game.update) window.Game.update(dt);
