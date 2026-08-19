@@ -29,6 +29,8 @@
   World.placeObstacles(worldRng);
   World.placeBillboards(worldRng);
   World.placeScenery(worldRng);
+  Screens.init();
+
   window.Game.render = function (ctx, state) {
     const width = canvas.clientWidth;
     const height = canvas.clientHeight;

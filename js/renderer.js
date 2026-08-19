@@ -176,39 +176,65 @@ const RoadRenderer = (function () {
     if (dz > 10 && dz < drawDist) {
       project(tamPoint, 0, cameraHeight, cameraZ, tam.z, width, height, CONFIG.ROAD.roadWidth);
       const carX = tamPoint.screen.x + tam.x * tamPoint.screen.w;
-      drawCarSprite(ctx, carX, tamPoint.screen.y, tamPoint.screen.w * 0.55, "#ff3b5c", "TAM");
+      drawCarSprite(ctx, carX, tamPoint.screen.y, tamPoint.screen.w * 0.55, TAM_COLOR, "TAM", TAM_MODEL);
     }
 
-    const py = height * 0.93;
-    const pw = width * 0.16;
+    const py = height * 0.88;
+    const pw = width * 0.15;
     const px = width / 2 + playerXFrac * (width * 0.13);
-    drawCarSprite(ctx, px, py, pw, PlayerCar.color || "#3ad1ff", null);
+    drawCarSprite(ctx, px, py, pw, Selection.colorHex(), null, Selection.model());
   }
 
-  function drawCarSprite(ctx, x, y, w, color, label) {
+  // TAM is always the same contrasting red with a name tag, so the player
+  // can tell at a glance which car is theirs.
+  const TAM_COLOR = "#ff3b5c";
+  const TAM_MODEL = CarCatalog.MODELS[2];
+
+  // Draws a car from a catalog model outline. Shared by the race view and
+  // the car selection preview so the preview always matches what races.
+  function drawCarSprite(ctx, x, y, w, color, label, model) {
+    const shape = model || CarCatalog.MODELS[0];
     const h = w * 0.6;
-    ctx.fillStyle = "rgba(0,0,0,0.25)";
+
+    ctx.fillStyle = "rgba(0,0,0,0.28)";
     ctx.beginPath();
-    ctx.ellipse(x, y + h * 0.08, w * 0.5, h * 0.18, 0, 0, Math.PI * 2);
+    ctx.ellipse(x, y + h * 0.06, w * 0.52, h * 0.16, 0, 0, Math.PI * 2);
     ctx.fill();
+
+    if (shape.wingHeight > 0) {
+      ctx.fillStyle = "rgba(18, 24, 36, 0.9)";
+      const wy = y - h * (0.62 + shape.wingHeight);
+      ctx.fillRect(x - w * 0.44, wy, w * 0.88, h * 0.09);
+    }
 
     ctx.fillStyle = color;
     ctx.beginPath();
-    ctx.moveTo(x - w * 0.5, y);
-    ctx.lineTo(x - w * 0.42, y - h * 0.55);
-    ctx.lineTo(x + w * 0.42, y - h * 0.55);
-    ctx.lineTo(x + w * 0.5, y);
+    for (let i = 0; i < shape.body.length; i++) {
+      const px = x + shape.body[i][0] * w;
+      const py = y - shape.body[i][1] * h;
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
     ctx.closePath();
     ctx.fill();
 
-    ctx.fillStyle = "rgba(20,25,35,0.85)";
-    ctx.fillRect(x - w * 0.28, y - h * 0.5, w * 0.56, h * 0.22);
+    ctx.fillStyle = "rgba(16, 22, 34, 0.88)";
+    ctx.fillRect(
+      x + shape.cabin.x * w,
+      y - (shape.cabin.y + shape.cabin.h) * h,
+      shape.cabin.w * w,
+      shape.cabin.h * h
+    );
+
+    ctx.fillStyle = "rgba(0, 0, 0, 0.55)";
+    ctx.fillRect(x - w * 0.5, y - h * 0.16, w * 0.13, h * 0.16);
+    ctx.fillRect(x + w * 0.37, y - h * 0.16, w * 0.13, h * 0.16);
 
     if (label) {
       ctx.fillStyle = "#ffffff";
-      ctx.font = `bold ${Math.max(9, h * 0.35)}px sans-serif`;
+      ctx.font = `bold ${Math.max(9, h * 0.34)}px sans-serif`;
       ctx.textAlign = "center";
-      ctx.fillText(label, x, y - h * 0.62);
+      ctx.fillText(label, x, y - h * (0.78 + shape.wingHeight));
     }
   }
 
@@ -305,5 +331,5 @@ const RoadRenderer = (function () {
     }
   }
 
-  return { render, project, get cameraDepth() { return cameraDepth; } };
+  return { render, project, drawCarSprite };
 })();
