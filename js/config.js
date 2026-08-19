@@ -43,6 +43,14 @@ const CONFIG = {
   // TAM's difficulty knobs. Target: TAM wins roughly 30-40% of races. Raise
   // baseSpeedFactor or rubberBandStrength to make TAM harder to shake;
   // raise mistakeFrequency or lower avoidanceSkill to make TAM easier.
+  //
+  // On why TAM's speed is not simply equal to the player's: both factors
+  // below are expressed relative to CAR.maxSpeed. TAM *cruises* at 0.976 of
+  // it, so a clean flat-out lap by the player is genuinely faster than TAM.
+  // The 1.12 ceiling is only ever reached while rubber banding is pulling
+  // TAM back into contention from behind. Matching the two exactly would
+  // make catching up impossible and TAM would win 0% of races, which is
+  // what happened before this was tuned. See QA.md.
   TAM: {
     baseSpeedFactor: 0.976, // TAM's speed relative to player max speed, before rubber banding
     maxSpeedFactor: 1.12, // TAM's hard speed ceiling, relative to player max speed
