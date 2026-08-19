@@ -57,6 +57,10 @@ const CONFIG = {
     countdownSeconds: 3.6, // 3, 2, 1, GO
   },
 
+  HUD: {
+    displayTopSpeedKph: 320, // speed shown on the HUD when at max speed
+  },
+
   NAME: {
     maxLength: 12,
     defaultName: "PLAYER",

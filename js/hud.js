@@ -99,8 +99,48 @@ const HUD = (function () {
     ctx.fill();
   }
 
+  function formatTime(seconds) {
+    const m = Math.floor(seconds / 60);
+    const s = Math.floor(seconds % 60);
+    const cs = Math.floor((seconds * 100) % 100);
+    return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}.${String(cs).padStart(2, "0")}`;
+  }
+
+  // Speed is shown in km/h derived from world units per second, purely for
+  // readability: the raw world-unit figure means nothing to a player.
+  function toKph(speed) {
+    return Math.round((speed / CONFIG.CAR.maxSpeed) * CONFIG.HUD.displayTopSpeedKph);
+  }
+
+  function drawTimeAndSpeed(ctx, width) {
+    const w = 260;
+    const h = 76;
+    const x = width / 2 - w / 2;
+    const y = 18;
+    drawPanel(ctx, x, y, w, h);
+
+    ctx.textAlign = "center";
+    ctx.fillStyle = PALETTE.dim;
+    ctx.font = "600 10px sans-serif";
+    ctx.fillText("TIME", x + w * 0.28, y + 22);
+    ctx.fillText("SPEED", x + w * 0.72, y + 22);
+
+    ctx.fillStyle = PALETTE.text;
+    ctx.font = "700 24px ui-monospace, Consolas, monospace";
+    ctx.fillText(formatTime(Race.state.elapsed), x + w * 0.28, y + 50);
+
+    ctx.fillStyle = PALETTE.accent;
+    ctx.font = "700 26px ui-monospace, Consolas, monospace";
+    ctx.fillText(String(toKph(PlayerCar.state.speed)), x + w * 0.72, y + 50);
+
+    ctx.fillStyle = PALETTE.dim;
+    ctx.font = "600 10px sans-serif";
+    ctx.fillText("KM/H", x + w * 0.72, y + 65);
+  }
+
   function render(ctx, width, height) {
     drawMiniMap(ctx, width, height);
+    drawTimeAndSpeed(ctx, width);
   }
 
   function reset() {
