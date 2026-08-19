@@ -9,6 +9,65 @@
 <body>
 <div id="game-root">
   <canvas id="race-canvas"></canvas>
+
+  <section id="screen-title" class="screen" hidden>
+    <div class="panel">
+      <p class="eyebrow">Code Cortex 3.0</p>
+      <h1 class="title">Cortex Rush</h1>
+      <p class="lede">Race TAM down the strip. Dodge the cones. Take the win.</p>
+      <button type="button" class="btn btn-primary" data-action="to-name">Start</button>
+      <p class="hint">Arrow keys to steer, accelerate and brake.</p>
+    </div>
+  </section>
+
+  <section id="screen-name" class="screen" hidden>
+    <div class="panel">
+      <p class="eyebrow">Step 1 of 2</p>
+      <h2 class="heading">Driver name</h2>
+      <label class="field-label" for="name-input">Enter your name</label>
+      <input id="name-input" class="field" type="text" maxlength="12" autocomplete="off"
+             spellcheck="false" placeholder="PLAYER" />
+      <p class="hint" id="name-hint">Up to 12 characters. Leave blank to race as PLAYER.</p>
+      <div class="row">
+        <button type="button" class="btn" data-action="to-title">Back</button>
+        <button type="button" class="btn btn-primary" data-action="to-car">Continue</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="screen-car" class="screen" hidden>
+    <div class="panel panel-wide">
+      <p class="eyebrow">Step 2 of 2</p>
+      <h2 class="heading">Pick your car</h2>
+      <canvas id="car-preview" class="car-preview" width="420" height="220"
+              aria-label="Preview of the selected car"></canvas>
+      <fieldset class="group">
+        <legend class="field-label">Model</legend>
+        <div class="chips" id="model-chips"></div>
+      </fieldset>
+      <fieldset class="group">
+        <legend class="field-label">Colour</legend>
+        <div class="chips" id="color-chips"></div>
+      </fieldset>
+      <div class="row">
+        <button type="button" class="btn" data-action="to-name">Back</button>
+        <button type="button" class="btn btn-primary" data-action="start-race">Race</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="screen-results" class="screen" hidden>
+    <div class="panel">
+      <p class="eyebrow">Code Cortex 3.0</p>
+      <h2 class="heading" id="result-heading">Result</h2>
+      <dl class="stats" id="result-stats"></dl>
+      <p class="lede" id="result-summary"></p>
+      <div class="row">
+        <button type="button" class="btn btn-primary" data-action="rematch">Rematch</button>
+        <button type="button" class="btn" data-action="to-title">Change car</button>
+      </div>
+    </div>
+  </section>
 </div>
 <script src="js/config.js"></script>
 <script src="js/utils.js"></script>
