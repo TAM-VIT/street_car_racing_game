@@ -32,7 +32,9 @@ const Race = (function () {
 
   function update(dt) {
     if (state.countdown > 0) {
+      const before = state.countdown;
       state.countdown -= dt;
+      playCountdownCues(before, state.countdown);
       return;
     }
     if (state.finished) return;
@@ -50,8 +52,18 @@ const Race = (function () {
     if (state.playerFinishTime || state.tamFinishTime) {
       state.finished = true;
       state.winner = state.playerFinishTime ? "player" : "tam";
+      Audio.playFinish();
       GameStateMachine.set(GameState.RESULTS);
     }
+  }
+
+  // Fires one cue per whole-second boundary the countdown crosses this tick.
+  function playCountdownCues(before, after) {
+    const beforeTick = Math.ceil(before - 0.6);
+    const afterTick = Math.ceil(after - 0.6);
+    if (afterTick === beforeTick) return;
+    if (afterTick > 0) Audio.playCountdownTick();
+    else if (beforeTick > 0) Audio.playCountdownGo();
   }
 
   return { state, start, update, progress, totalDistance };

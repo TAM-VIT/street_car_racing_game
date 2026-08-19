@@ -64,6 +64,7 @@ const PlayerCar = (function () {
     if (hit) {
       applyCollision();
       state.hitCount++;
+      Audio.playCollision();
     }
   }
 

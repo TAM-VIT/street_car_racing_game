@@ -65,6 +65,15 @@ const CONFIG = {
     countdownSeconds: 3.6, // 3, 2, 1, GO
   },
 
+  AUDIO: {
+    masterVolume: 0.35, // deliberately modest: this runs at a public booth
+    engineBaseHz: 55,
+    engineSweepHz: 210, // added to the base pitch at full speed
+    engineVolume: 0.06,
+    collisionVolume: 0.22,
+    uiVolume: 0.12,
+  },
+
   HUD: {
     displayTopSpeedKph: 320, // speed shown on the HUD when at max speed
     metresPerWorldUnit: 90, // converts world units to the metre figures shown to the player

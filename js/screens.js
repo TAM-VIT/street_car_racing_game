@@ -97,10 +97,19 @@ const Screens = (function () {
     },
     "start-race": () => startRace(),
     rematch: () => startRace(),
+    "toggle-mute": () => syncMuteButton(Audio.toggleMute()),
   };
+
+  function syncMuteButton(muted) {
+    const btn = document.getElementById("mute-toggle");
+    btn.setAttribute("aria-pressed", String(muted));
+    btn.textContent = muted ? "Sound off" : "Sound on";
+    btn.title = muted ? "Unmute sound (M)" : "Mute sound (M)";
+  }
 
   function startRace() {
     Race.start();
+    Audio.startEngine();
     GameStateMachine.set(GameState.RACE);
   }
 
@@ -173,13 +182,18 @@ const Screens = (function () {
     // A booth player must never be able to get stuck. Escape always backs
     // out to the title screen, from any screen including mid-race.
     document.addEventListener("keydown", (e) => {
-      if (e.key !== "Escape") return;
-      Input.resetAll();
-      GameStateMachine.set(GameState.TITLE);
+      if (e.target === nameInput) return;
+      if (e.key === "Escape") {
+        Input.resetAll();
+        GameStateMachine.set(GameState.TITLE);
+      } else if (e.key === "m" || e.key === "M") {
+        syncMuteButton(Audio.toggleMute());
+      }
     });
 
     GameStateMachine.onChange((next) => {
       if (next === GameState.RESULTS) renderResults();
+      if (next !== GameState.RACE) Audio.stopEngine();
       showFor(next);
     });
     showFor(GameStateMachine.get());

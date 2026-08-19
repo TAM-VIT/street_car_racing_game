@@ -54,6 +54,7 @@
       const racing = Race.state.countdown <= 0 && !Race.state.finished;
       PlayerCar.update(dt, racing ? Input.keys : NO_KEYS);
       if (racing) TamCar.update(dt, PlayerCar.state.z);
+      Audio.updateEngine(PlayerCar.state.speed / CONFIG.CAR.maxSpeed);
     }
     if (window.Game.update) window.Game.update(dt);
   }
