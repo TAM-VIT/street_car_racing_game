@@ -69,6 +69,12 @@ const Road = (function () {
     }
 
     addStraight(CONFIG.ROAD.totalSegments - segments.length); // finish straight
+
+    // Visible start and finish lines.
+    segments[1].line = "start";
+    segments[2].line = "start";
+    segments[segments.length - 2].line = "finish";
+    segments[segments.length - 1].line = "finish";
   }
 
   return {

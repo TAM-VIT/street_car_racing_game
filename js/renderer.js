@@ -40,7 +40,24 @@ const RoadRenderer = (function () {
     ctx.fill();
   }
 
-  function drawSegment(ctx, width, x1, y1, w1, x2, y2, w2, colorSet, laneLine) {
+  function drawFinishBand(ctx, x1, y1, w1, x2, y2, w2) {
+    const cols = 10;
+    for (let i = 0; i < cols; i++) {
+      const t1a = -1 + (i / cols) * 2;
+      const t1b = -1 + ((i + 1) / cols) * 2;
+      const dark = i % 2 === 0;
+      polygon(
+        ctx,
+        x1 + t1a * w1, y1,
+        x1 + t1b * w1, y1,
+        x2 + t1b * w2, y2,
+        x2 + t1a * w2, y2,
+        dark ? "#0f1115" : "#f2f2f2"
+      );
+    }
+  }
+
+  function drawSegment(ctx, width, x1, y1, w1, x2, y2, w2, colorSet, laneLine, line) {
     const r1 = w1 / 6;
     const r2 = w2 / 6;
 
@@ -68,6 +85,10 @@ const RoadRenderer = (function () {
           "#f2f2f2"
         );
       }
+    }
+
+    if (line) {
+      drawFinishBand(ctx, x1, y1, w1, x2, y2, w2);
     }
   }
 
@@ -119,7 +140,8 @@ const RoadRenderer = (function () {
         p2.screen.y,
         p2.screen.w,
         colorSet,
-        laneLine
+        laneLine,
+        segment.line
       );
 
       segment.visible = true;
