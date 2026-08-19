@@ -27,6 +27,7 @@
   const worldRng = Utils.createRng(Date.now() & 0xffffffff);
   World.placeObstacles(worldRng);
   World.placeBillboards(worldRng);
+  World.placeScenery(worldRng);
   window.Game.render = function (ctx, state) {
     const width = canvas.clientWidth;
     const height = canvas.clientHeight;

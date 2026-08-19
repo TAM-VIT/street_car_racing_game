@@ -20,6 +20,7 @@ const World = (function () {
 
     for (let n = start; n < segments.length - 80; n += gap + Math.floor(rng() * 60)) {
       const billboard = {
+        kind: "billboard",
         x: side * 2.6,
         z: segments[n].p1.world.z,
         side,
@@ -54,6 +55,7 @@ const World = (function () {
       const lane = Math.floor(rng() * 3) - 1; // -1, 0, 1
       const jitter = (rng() - 0.5) * 0.3;
       const obstacle = {
+        kind: "obstacle",
         type,
         radius: OBSTACLE_TYPES[type].radius,
         x: lane + jitter,
@@ -62,7 +64,23 @@ const World = (function () {
       };
       obstacles.push(obstacle);
       segments[n].obstacles.push(obstacle);
+      segments[n].sprites.push(obstacle);
       nextAt = n + minGap + Math.floor(rng() * 14);
+    }
+  }
+
+  const SCENERY_GAP = 6;
+
+  // Cheap roadside scenery (trees and signs) for a sense of depth and speed.
+  // Objects are created once at placement and reused every frame, never
+  // allocated inside the render loop.
+  function placeScenery(rng) {
+    const segments = Road.segments;
+    for (let n = 20; n < segments.length - 20; n += SCENERY_GAP) {
+      if (rng() > 0.6) continue;
+      const side = rng() > 0.5 ? 1 : -1;
+      const kind = rng() > 0.75 ? "sign" : "tree";
+      segments[n].sprites.push({ kind, side, z: segments[n].p1.world.z });
     }
   }
 
@@ -88,5 +106,13 @@ const World = (function () {
     return null;
   }
 
-  return { obstacles, billboards, OBSTACLE_TYPES, placeObstacles, placeBillboards, checkCollision };
+  return {
+    obstacles,
+    billboards,
+    OBSTACLE_TYPES,
+    placeObstacles,
+    placeBillboards,
+    placeScenery,
+    checkCollision,
+  };
 })();
