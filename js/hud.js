@@ -193,10 +193,37 @@ const HUD = (function () {
     ctx.stroke();
   }
 
+  function drawCountdown(ctx, width, height) {
+    const remaining = Race.state.countdown;
+    if (remaining <= 0) return;
+
+    const number = Math.ceil(remaining - 0.6);
+    const label = number > 0 ? String(number) : "GO";
+
+    // Each digit scales down as its own beat elapses, so the countdown
+    // reads as a pulse rather than a static number swap.
+    const beat = number > 0 ? (remaining - 0.6) % 1 : remaining / 0.6;
+    const scale = 1 + (1 - beat) * 0.35;
+
+    ctx.save();
+    ctx.translate(width / 2, height / 2);
+    ctx.scale(scale, scale);
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = label === "GO" ? PALETTE.accent : PALETTE.text;
+    ctx.font = "800 96px sans-serif";
+    ctx.shadowColor = "rgba(0,0,0,0.6)";
+    ctx.shadowBlur = 24;
+    ctx.fillText(label, 0, 0);
+    ctx.restore();
+    ctx.textBaseline = "alphabetic";
+  }
+
   function render(ctx, width, height) {
     drawMiniMap(ctx, width, height);
     drawTimeAndSpeed(ctx, width);
     drawProgressBar(ctx, width, height);
+    drawCountdown(ctx, width, height);
   }
 
   function reset() {
