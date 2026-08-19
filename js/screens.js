@@ -170,6 +170,14 @@ const Screens = (function () {
       e.stopPropagation();
     });
 
+    // A booth player must never be able to get stuck. Escape always backs
+    // out to the title screen, from any screen including mid-race.
+    document.addEventListener("keydown", (e) => {
+      if (e.key !== "Escape") return;
+      Input.resetAll();
+      GameStateMachine.set(GameState.TITLE);
+    });
+
     GameStateMachine.onChange((next) => {
       if (next === GameState.RESULTS) renderResults();
       showFor(next);
