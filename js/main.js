@@ -42,10 +42,15 @@
   let lastTime = performance.now();
   let accumulator = 0;
 
+  const NO_KEYS = { left: false, right: false, up: false, down: false };
+
   function update(dt) {
     if (GameStateMachine.get() === GameState.RACE) {
-      PlayerCar.update(dt, Input.keys);
-      TamCar.update(dt, PlayerCar.state.z);
+      Race.update(dt);
+      // Control unlocks only once the countdown has finished.
+      const racing = Race.state.countdown <= 0 && !Race.state.finished;
+      PlayerCar.update(dt, racing ? Input.keys : NO_KEYS);
+      if (racing) TamCar.update(dt, PlayerCar.state.z);
     }
     if (window.Game.update) window.Game.update(dt);
   }

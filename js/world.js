@@ -106,9 +106,14 @@ const World = (function () {
     return null;
   }
 
+  function resetObstacleHits() {
+    for (let i = 0; i < obstacles.length; i++) obstacles[i].hit = false;
+  }
+
   return {
     obstacles,
     billboards,
+    resetObstacleHits,
     OBSTACLE_TYPES,
     placeObstacles,
     placeBillboards,

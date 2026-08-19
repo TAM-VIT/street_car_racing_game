@@ -53,6 +53,10 @@ const CONFIG = {
     paceNoiseAmplitude: 0.08, // max fractional speed drift from pace variation
   },
 
+  RACE: {
+    countdownSeconds: 3.6, // 3, 2, 1, GO
+  },
+
   NAME: {
     maxLength: 12,
     defaultName: "PLAYER",

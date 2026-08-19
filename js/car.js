@@ -14,6 +14,7 @@ const PlayerCar = (function () {
     state.speed = 0;
     state.offRoad = false;
     state.controlDisruption = 0;
+    state.hitCount = 0;
   }
 
   function worldX() {
@@ -60,7 +61,10 @@ const PlayerCar = (function () {
     if (state.controlDisruption > 0) state.controlDisruption -= dt;
 
     const hit = World.checkCollision(state);
-    if (hit) applyCollision();
+    if (hit) {
+      applyCollision();
+      state.hitCount++;
+    }
   }
 
   // Hitting an obstacle costs speed and briefly loosens steering, but stays
