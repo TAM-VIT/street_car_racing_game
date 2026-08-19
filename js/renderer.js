@@ -92,9 +92,24 @@ const RoadRenderer = (function () {
     }
   }
 
+  let shakeTime = 0;
+
   function render(ctx, width, height, playerZ, playerWorldX) {
     const segments = Road.segments;
     if (segments.length === 0) return;
+
+    // Off-road rumble: a small vertical shake that scales with speed, so
+    // leaving the road is felt as well as seen. Skipped when the viewer
+    // has asked for reduced motion.
+    let shakeY = 0;
+    if (PlayerCar.state.offRoad && !REDUCED_MOTION.matches) {
+      shakeTime += 0.35;
+      const intensity = (PlayerCar.state.speed / CONFIG.CAR.maxSpeed) * 5;
+      shakeY = Math.sin(shakeTime) * intensity;
+    }
+
+    ctx.save();
+    if (shakeY !== 0) ctx.translate(0, shakeY);
 
     const segLen = CONFIG.ROAD.segmentLength;
     const baseIndex = Math.floor(playerZ / segLen) % segments.length;
@@ -107,8 +122,9 @@ const RoadRenderer = (function () {
     let x = 0;
     let dx = -(segments[baseIndex].curve * basePercent);
 
+    // Overdrawn vertically so the rumble shake never exposes a bare edge.
     ctx.fillStyle = "#4d7fc9";
-    ctx.fillRect(0, 0, width, height / 2);
+    ctx.fillRect(0, -12, width, height / 2 + 12);
 
     for (let n = 0; n < CONFIG.ROAD.drawDistance; n++) {
       const segment = segments[(baseIndex + n) % segments.length];
@@ -164,8 +180,11 @@ const RoadRenderer = (function () {
       }
     }
 
+    ctx.restore();
     renderCars(ctx, width, height, cameraZ, cameraHeight, PlayerCar.state.x);
   }
+
+  const REDUCED_MOTION = window.matchMedia("(prefers-reduced-motion: reduce)");
 
   const tamPoint = { world: { y: 0 }, screen: null };
 
@@ -179,7 +198,8 @@ const RoadRenderer = (function () {
       drawCarSprite(ctx, carX, tamPoint.screen.y, tamPoint.screen.w * 0.55, TAM_COLOR, "TAM", TAM_MODEL);
     }
 
-    const py = height * 0.88;
+    // Sits above the bottom HUD bar so the two never overlap.
+    const py = height * 0.83;
     const pw = width * 0.15;
     const px = width / 2 + playerXFrac * (width * 0.13);
     drawCarSprite(ctx, px, py, pw, Selection.colorHex(), null, Selection.model());
@@ -231,10 +251,16 @@ const RoadRenderer = (function () {
     ctx.fillRect(x + w * 0.37, y - h * 0.16, w * 0.13, h * 0.16);
 
     if (label) {
+      // Capped so the tag stays a readable marker instead of ballooning
+      // across the screen when TAM is right in front of the player.
+      const size = Utils.clamp(h * 0.34, 9, 22);
       ctx.fillStyle = "#ffffff";
-      ctx.font = `bold ${Math.max(9, h * 0.34)}px sans-serif`;
+      ctx.font = `bold ${size}px sans-serif`;
       ctx.textAlign = "center";
-      ctx.fillText(label, x, y - h * (0.78 + shape.wingHeight));
+      ctx.shadowColor = "rgba(0,0,0,0.65)";
+      ctx.shadowBlur = 4;
+      ctx.fillText(label, x, y - h * (0.78 + shape.wingHeight) - 4);
+      ctx.shadowBlur = 0;
     }
   }
 
