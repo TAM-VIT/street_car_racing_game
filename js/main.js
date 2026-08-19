@@ -33,6 +33,7 @@
     const width = canvas.clientWidth;
     const height = canvas.clientHeight;
     RoadRenderer.render(ctx, width, height, PlayerCar.state.z, PlayerCar.worldX());
+    if (state === GameState.RACE) HUD.render(ctx, width, height);
   };
 
   // Fixed timestep update with an accumulator so gameplay speed is
