@@ -31,12 +31,26 @@ const CONFIG = {
     obstacleControlDisruption: 0.6, // seconds of reduced steering after a hit
   },
 
+  // TAM's difficulty knobs. Target: TAM wins roughly 30-40% of races. Raise
+  // baseSpeedFactor or rubberBandStrength to make TAM harder to shake;
+  // raise mistakeFrequency or lower avoidanceSkill to make TAM easier.
   TAM: {
     baseSpeedFactor: 0.86, // TAM's speed relative to player max speed, before rubber banding
     rubberBandStrength: 0.0000045, // how strongly the gap (world units) shifts TAM's target speed
     rubberBandMax: 0.16, // cap on the rubber band adjustment
     avoidanceSkill: 0.9, // 0-1, how decisively TAM dodges a spotted obstacle
+    avoidanceLookaheadSegments: 10, // how many segments ahead TAM scans for obstacles
+    avoidanceTriggerMargin: 0.25, // extra clearance added to an obstacle's radius before TAM reacts
+    steerLerpSpeed: 2.2, // how quickly TAM's lane position eases toward its target line
     mistakeFrequency: 0.35, // chance of a brief mistake each pace-check interval
+    mistakeCheckIntervalMin: 3, // seconds
+    mistakeCheckIntervalRange: 4, // seconds, added on top of the min
+    mistakeDurationMin: 0.5, // seconds
+    mistakeDurationRange: 0.6, // seconds, added on top of the min
+    mistakeSlowdown: 0.72, // speed multiplier while a mistake is active
+    paceCheckIntervalMin: 4, // seconds
+    paceCheckIntervalRange: 3, // seconds, added on top of the min
+    paceNoiseAmplitude: 0.08, // max fractional speed drift from pace variation
   },
 
   NAME: {

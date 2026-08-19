@@ -36,17 +36,15 @@ const TamCar = (function () {
     const segments = Road.segments;
     const segLen = CONFIG.ROAD.segmentLength;
     const baseIndex = Math.floor(state.z / segLen) % segments.length;
-    const lookahead = 10;
 
-    for (let n = 1; n <= lookahead; n++) {
+    for (let n = 1; n <= t.avoidanceLookaheadSegments; n++) {
       const segment = segments[(baseIndex + n) % segments.length];
       for (let i = 0; i < segment.obstacles.length; i++) {
         const obstacle = segment.obstacles[i];
         if (obstacle.hit) continue;
-        if (Math.abs(obstacle.x - state.x) < obstacle.radius + 0.25) {
-          const skillFactor = t.avoidanceSkill;
+        if (Math.abs(obstacle.x - state.x) < obstacle.radius + t.avoidanceTriggerMargin) {
           const dodge = obstacle.x <= state.x ? 0.55 : -0.55;
-          return dodge * skillFactor;
+          return dodge * t.avoidanceSkill;
         }
       }
     }
@@ -63,20 +61,20 @@ const TamCar = (function () {
     // spotted a short distance ahead.
     const avoidance = obstacleAvoidance(t);
     const targetX = Utils.clamp(-segment.curve * 0.12 + avoidance, -0.85, 0.85);
-    state.x = Utils.lerp(state.x, targetX, Math.min(1, dt * 2.2));
+    state.x = Utils.lerp(state.x, targetX, Math.min(1, dt * t.steerLerpSpeed));
 
     // Small natural variation: an occasional brief slowdown so no two
     // races play out identically and the player can sometimes capitalise.
     let mistakeFactor = 1;
     if (state.mistakeActive > 0) {
       state.mistakeActive -= dt;
-      mistakeFactor = 0.72;
+      mistakeFactor = t.mistakeSlowdown;
     } else {
       state.nextMistakeCheck -= dt;
       if (state.nextMistakeCheck <= 0) {
-        state.nextMistakeCheck = 3 + rng() * 4;
+        state.nextMistakeCheck = t.mistakeCheckIntervalMin + rng() * t.mistakeCheckIntervalRange;
         if (rng() < t.mistakeFrequency) {
-          state.mistakeActive = 0.5 + rng() * 0.6;
+          state.mistakeActive = t.mistakeDurationMin + rng() * t.mistakeDurationRange;
         }
       }
     }
@@ -85,8 +83,8 @@ const TamCar = (function () {
     // lap instead of holding an obviously constant, robotic pace.
     state.nextPaceCheck -= dt;
     if (state.nextPaceCheck <= 0) {
-      state.nextPaceCheck = 4 + rng() * 3;
-      state.paceNoise = (rng() - 0.5) * 0.08;
+      state.nextPaceCheck = t.paceCheckIntervalMin + rng() * t.paceCheckIntervalRange;
+      state.paceNoise = (rng() - 0.5) * t.paceNoiseAmplitude;
     }
 
     // Rubber banding: TAM eases off when well ahead of the player and
