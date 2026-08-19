@@ -163,6 +163,53 @@ const RoadRenderer = (function () {
         drawSprite(ctx, p1.screen.x, p1.screen.y, p1.screen.scale, p1.screen.w, sprites[i]);
       }
     }
+
+    renderCars(ctx, width, height, cameraZ, cameraHeight, PlayerCar.state.x);
+  }
+
+  const tamPoint = { world: { y: 0 }, screen: null };
+
+  function renderCars(ctx, width, height, cameraZ, cameraHeight, playerXFrac) {
+    const tam = TamCar.state;
+    const drawDist = CONFIG.ROAD.drawDistance * CONFIG.ROAD.segmentLength;
+    const dz = tam.z - cameraZ;
+    if (dz > 10 && dz < drawDist) {
+      project(tamPoint, 0, cameraHeight, cameraZ, tam.z, width, height, CONFIG.ROAD.roadWidth);
+      const carX = tamPoint.screen.x + tam.x * tamPoint.screen.w;
+      drawCarSprite(ctx, carX, tamPoint.screen.y, tamPoint.screen.w * 0.55, "#ff3b5c", "TAM");
+    }
+
+    const py = height * 0.93;
+    const pw = width * 0.16;
+    const px = width / 2 + playerXFrac * (width * 0.13);
+    drawCarSprite(ctx, px, py, pw, PlayerCar.color || "#3ad1ff", null);
+  }
+
+  function drawCarSprite(ctx, x, y, w, color, label) {
+    const h = w * 0.6;
+    ctx.fillStyle = "rgba(0,0,0,0.25)";
+    ctx.beginPath();
+    ctx.ellipse(x, y + h * 0.08, w * 0.5, h * 0.18, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(x - w * 0.5, y);
+    ctx.lineTo(x - w * 0.42, y - h * 0.55);
+    ctx.lineTo(x + w * 0.42, y - h * 0.55);
+    ctx.lineTo(x + w * 0.5, y);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = "rgba(20,25,35,0.85)";
+    ctx.fillRect(x - w * 0.28, y - h * 0.5, w * 0.56, h * 0.22);
+
+    if (label) {
+      ctx.fillStyle = "#ffffff";
+      ctx.font = `bold ${Math.max(9, h * 0.35)}px sans-serif`;
+      ctx.textAlign = "center";
+      ctx.fillText(label, x, y - h * 0.62);
+    }
   }
 
   // Sprite sizes are expressed as fractions of the projected road half-width

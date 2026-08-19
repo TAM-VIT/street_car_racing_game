@@ -24,6 +24,7 @@
 
   Road.build();
   PlayerCar.reset();
+  TamCar.reset();
   const worldRng = Utils.createRng(Date.now() & 0xffffffff);
   World.placeObstacles(worldRng);
   World.placeBillboards(worldRng);
@@ -44,6 +45,7 @@
   function update(dt) {
     if (GameStateMachine.get() === GameState.RACE) {
       PlayerCar.update(dt, Input.keys);
+      TamCar.update(dt);
     }
     if (window.Game.update) window.Game.update(dt);
   }
