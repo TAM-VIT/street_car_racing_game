@@ -2,10 +2,12 @@
 // Classic projected-road-segment technique: each segment is projected from
 // world space to screen space and drawn as a trapezoid, far to near.
 const RoadRenderer = (function () {
+  // Grass tones sit close together so the alternating bands read as texture
+  // rather than stripes; the base tone below is what fills the ground.
+  const GRASS_BASE = "#2c8a4b";
   const COLORS = {
-    light: { road: "#5a5f6e", grass: "#2f8f4e", rumble: "#d94b4b", lane: null },
-    dark: { road: "#52566a", grass: "#2a8047", rumble: "#e8e8e8", lane: null },
-    lane: { road: "#52566a", grass: "#2a8047", rumble: "#e8e8e8", lane: "#e8e8e8" },
+    light: { road: "#5a5f6e", grass: "#2f8f4e", rumble: "#d94b4b" },
+    dark: { road: "#565a6d", grass: null, rumble: "#e8e8e8" },
   };
 
   let cameraDepth = 1 / Math.tan(((CONFIG.ROAD.fieldOfView / 2) * Math.PI) / 180);
@@ -61,8 +63,14 @@ const RoadRenderer = (function () {
     const r1 = w1 / 6;
     const r2 = w2 / 6;
 
-    ctx.fillStyle = colorSet.grass;
-    ctx.fillRect(0, y2, width, Math.max(1, y1 - y2));
+    // The ground is painted once before this loop. Only segments tall enough
+    // to own real pixels add a grass band; forcing a minimum height here is
+    // what used to make the distance shimmer into stripes.
+    const bandHeight = y1 - y2;
+    if (bandHeight >= 2 && colorSet.grass) {
+      ctx.fillStyle = colorSet.grass;
+      ctx.fillRect(0, y2, width, bandHeight);
+    }
 
     polygon(ctx, x1 - w1 - r1, y1, x1 - w1, y1, x2 - w2, y2, x2 - w2 - r2, y2, colorSet.rumble);
     polygon(ctx, x1 + w1 + r1, y1, x1 + w1, y1, x2 + w2, y2, x2 + w2 + r2, y2, colorSet.rumble);
@@ -93,6 +101,8 @@ const RoadRenderer = (function () {
   }
 
   let shakeTime = 0;
+  let skyGradient = null;
+  let skyGradientHeight = 0;
 
   function render(ctx, width, height, playerZ, playerWorldX) {
     const segments = Road.segments;
@@ -122,9 +132,21 @@ const RoadRenderer = (function () {
     let x = 0;
     let dx = -(segments[baseIndex].curve * basePercent);
 
-    // Overdrawn vertically so the rumble shake never exposes a bare edge.
-    ctx.fillStyle = "#4d7fc9";
-    ctx.fillRect(0, -12, width, height / 2 + 12);
+    // Sky and ground are each painted once, overdrawn vertically so the
+    // rumble shake never exposes a bare edge. Painting the ground as one
+    // fill (rather than per segment) is what keeps the distance clean.
+    const horizon = height / 2;
+    if (!skyGradient || skyGradientHeight !== height) {
+      skyGradient = ctx.createLinearGradient(0, 0, 0, horizon);
+      skyGradient.addColorStop(0, "#2f63b5");
+      skyGradient.addColorStop(1, "#7fb0e8");
+      skyGradientHeight = height;
+    }
+    ctx.fillStyle = skyGradient;
+    ctx.fillRect(0, -12, width, horizon + 12);
+
+    ctx.fillStyle = GRASS_BASE;
+    ctx.fillRect(0, horizon, width, height - horizon + 12);
 
     for (let n = 0; n < CONFIG.ROAD.drawDistance; n++) {
       const segment = segments[(baseIndex + n) % segments.length];
@@ -208,60 +230,153 @@ const RoadRenderer = (function () {
   // TAM is always the same contrasting red with a name tag, so the player
   // can tell at a glance which car is theirs.
   const TAM_COLOR = "#ff3b5c";
-  const TAM_MODEL = CarCatalog.MODELS[2];
+  const TAM_MODEL = CarCatalog.modelById("vortex");
 
-  // Draws a car from a catalog model outline. Shared by the race view and
-  // the car selection preview so the preview always matches what races.
+  // Draws a race car seen from behind, layered back to front: rear wing,
+  // tyres, body shell, glass, light bar, then the diffuser and exhausts.
+  // Shared by the race view and the selection preview so the preview always
+  // matches exactly what races.
   function drawCarSprite(ctx, x, y, w, color, label, model) {
-    const shape = model || CarCatalog.MODELS[0];
-    const h = w * 0.6;
+    const m = model || CarCatalog.MODELS[0];
+    const h = w * 0.5; // low and wide
+    const dark = shade(color, -0.42);
+    const mid = shade(color, -0.18);
+    const light = shade(color, 0.22);
 
-    ctx.fillStyle = "rgba(0,0,0,0.28)";
+    ctx.save();
+
+    // Contact shadow
+    ctx.fillStyle = "rgba(0,0,0,0.32)";
     ctx.beginPath();
-    ctx.ellipse(x, y + h * 0.06, w * 0.52, h * 0.16, 0, 0, Math.PI * 2);
+    ctx.ellipse(x, y + h * 0.04, w * 0.55, h * 0.11, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    if (shape.wingHeight > 0) {
-      ctx.fillStyle = "rgba(18, 24, 36, 0.9)";
-      const wy = y - h * (0.62 + shape.wingHeight);
-      ctx.fillRect(x - w * 0.44, wy, w * 0.88, h * 0.09);
+    // Rear wing sits behind the body so the endplates read as depth.
+    if (m.wing.width > 0) {
+      const wy = y - h * m.wing.height;
+      const ww = w * m.wing.width;
+      const wt = h * m.wing.thickness;
+      ctx.fillStyle = "#171c28";
+      ctx.fillRect(x - ww / 2, wy, ww, wt); // main plane
+      ctx.fillRect(x - ww / 2, wy, wt * 0.55, h * 0.2); // left endplate
+      ctx.fillRect(x + ww / 2 - wt * 0.55, wy, wt * 0.55, h * 0.2); // right endplate
+      ctx.fillStyle = mid;
+      ctx.fillRect(x - ww / 2, wy, ww, wt * 0.32); // colour flash along the plane
     }
 
-    ctx.fillStyle = color;
+    // Tyres
+    const tyreW = w * (m.openWheel ? 0.15 : 0.12);
+    const tyreH = h * (m.openWheel ? 0.42 : 0.30);
+    const tyreX = w * (m.openWheel ? 0.42 : m.bodyWidth - 0.03);
+    ctx.fillStyle = "#12151d";
+    roundRect(ctx, x - tyreX - tyreW / 2, y - tyreH, tyreW, tyreH, tyreW * 0.28);
+    roundRect(ctx, x + tyreX - tyreW / 2, y - tyreH, tyreW, tyreH, tyreW * 0.28);
+
+    // Body shell: wide at the arches, tapering to the roof.
+    const bw = w * m.bodyWidth;
+    const sw = w * m.shoulderWidth;
+    const rw = w * m.roofWidth;
+    const bh = h * m.bodyHeight;
+    const rh = h * m.roofHeight;
+
+    const grad = ctx.createLinearGradient(0, y - rh, 0, y);
+    grad.addColorStop(0, light);
+    grad.addColorStop(0.55, color);
+    grad.addColorStop(1, mid);
+    ctx.fillStyle = grad;
+
+    // Straight edges rather than curves: the hard shoulder line and the
+    // sharp taper to the roof are what make the silhouette read as a
+    // supercar instead of a hatchback.
     ctx.beginPath();
-    for (let i = 0; i < shape.body.length; i++) {
-      const px = x + shape.body[i][0] * w;
-      const py = y - shape.body[i][1] * h;
-      if (i === 0) ctx.moveTo(px, py);
-      else ctx.lineTo(px, py);
-    }
+    ctx.moveTo(x - bw, y);
+    ctx.lineTo(x - bw, y - bh * 0.42);
+    ctx.lineTo(x - sw, y - bh);
+    ctx.lineTo(x - rw, y - rh);
+    ctx.lineTo(x + rw, y - rh);
+    ctx.lineTo(x + sw, y - bh);
+    ctx.lineTo(x + bw, y - bh * 0.42);
+    ctx.lineTo(x + bw, y);
     ctx.closePath();
     ctx.fill();
 
-    ctx.fillStyle = "rgba(16, 22, 34, 0.88)";
-    ctx.fillRect(
-      x + shape.cabin.x * w,
-      y - (shape.cabin.y + shape.cabin.h) * h,
-      shape.cabin.w * w,
-      shape.cabin.h * h
-    );
+    // Shoulder crease catching the light along the top of the arches.
+    ctx.strokeStyle = shade(color, 0.42);
+    ctx.lineWidth = Math.max(1, h * 0.018);
+    ctx.beginPath();
+    ctx.moveTo(x - sw, y - bh);
+    ctx.lineTo(x + sw, y - bh);
+    ctx.stroke();
 
-    ctx.fillStyle = "rgba(0, 0, 0, 0.55)";
-    ctx.fillRect(x - w * 0.5, y - h * 0.16, w * 0.13, h * 0.16);
-    ctx.fillRect(x + w * 0.37, y - h * 0.16, w * 0.13, h * 0.16);
+    // Glass
+    const gw = w * m.glass.width;
+    ctx.fillStyle = "rgba(14, 20, 32, 0.9)";
+    ctx.beginPath();
+    ctx.moveTo(x - gw, y - h * m.glass.bottom);
+    ctx.lineTo(x - gw * 0.82, y - h * m.glass.top);
+    ctx.lineTo(x + gw * 0.82, y - h * m.glass.top);
+    ctx.lineTo(x + gw, y - h * m.glass.bottom);
+    ctx.closePath();
+    ctx.fill();
+
+    // Tail light bar
+    const lw = w * m.lightWidth;
+    const ly = y - h * m.lightY;
+    ctx.fillStyle = "#ff2f4d";
+    roundRect(ctx, x - bw * 0.92, ly, lw, h * 0.06, h * 0.02);
+    roundRect(ctx, x + bw * 0.92 - lw, ly, lw, h * 0.06, h * 0.02);
+
+    // Diffuser and exhausts
+    const dh = h * m.diffuser;
+    ctx.fillStyle = "#12151d";
+    ctx.fillRect(x - bw * 0.9, y - dh, bw * 1.8, dh);
+    ctx.fillStyle = "#3c4354";
+    for (let i = 0; i < 5; i++) {
+      const fx = x - bw * 0.72 + (i * bw * 1.44) / 4;
+      ctx.fillRect(fx, y - dh, Math.max(1, w * 0.008), dh);
+    }
+    ctx.fillStyle = "#8d95a8";
+    const pipeR = Math.max(1, w * 0.018);
+    for (let i = 0; i < m.exhausts; i++) {
+      const offset = m.exhausts === 1 ? 0 : (i === 0 ? -1 : 1) * w * m.exhaustSpread;
+      ctx.beginPath();
+      ctx.arc(x + offset, y - dh - pipeR, pipeR, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.restore();
 
     if (label) {
       // Capped so the tag stays a readable marker instead of ballooning
       // across the screen when TAM is right in front of the player.
-      const size = Utils.clamp(h * 0.34, 9, 22);
+      const size = Utils.clamp(h * 0.3, 9, 20);
+      const top = y - h * Math.max(m.roofHeight, m.wing.height) - size * 0.6;
       ctx.fillStyle = "#ffffff";
       ctx.font = `bold ${size}px sans-serif`;
       ctx.textAlign = "center";
-      ctx.shadowColor = "rgba(0,0,0,0.65)";
+      ctx.shadowColor = "rgba(0,0,0,0.75)";
       ctx.shadowBlur = 4;
-      ctx.fillText(label, x, y - h * (0.78 + shape.wingHeight) - 4);
+      ctx.fillText(label, x, top);
       ctx.shadowBlur = 0;
     }
+  }
+
+  function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.roundRect(x, y, w, h, r);
+    ctx.fill();
+  }
+
+  // Lightens (amount > 0) or darkens (amount < 0) a #rrggbb colour, used to
+  // build the body gradient from the single colour the player picked.
+  function shade(hex, amount) {
+    const n = parseInt(hex.slice(1), 16);
+    const t = amount < 0 ? 0 : 255;
+    const p = Math.abs(amount);
+    const r = Math.round(((n >> 16) & 255) * (1 - p) + t * p);
+    const g = Math.round(((n >> 8) & 255) * (1 - p) + t * p);
+    const b = Math.round((n & 255) * (1 - p) + t * p);
+    return `rgb(${r},${g},${b})`;
   }
 
   // Sprite sizes are expressed as fractions of the projected road half-width

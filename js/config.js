@@ -14,6 +14,7 @@ const CONFIG = {
     // Single value controlling race length. At CAR.maxSpeed this works out
     // to roughly 68 seconds: totalSegments * segmentLength / maxSpeed.
     totalSegments: 7500,
+    curveStrength: 5.5, // base curvature; raise for a twistier course
     fieldOfView: 100,
     cameraHeight: 1000,
     drawDistance: 300, // segments drawn ahead

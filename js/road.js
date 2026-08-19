@@ -49,15 +49,21 @@ const Road = (function () {
 
     addStraight(120); // start straight, gives the player time to build speed
 
-    const CURVE = 2.2; // gentle - the brief calls for only a little curviness
+    const C = CONFIG.ROAD.curveStrength;
     const pattern = [
-      { straight: 200 },
-      { curve: { enter: 60, hold: 50, leave: 60, curve: CURVE } },
-      { straight: 220 },
-      { curve: { enter: 70, hold: 40, leave: 70, curve: -CURVE } },
-      { straight: 180 },
-      { curve: { enter: 50, hold: 60, leave: 50, curve: CURVE * 0.7 } },
-      { straight: 240 },
+      { straight: 90 },
+      { curve: { enter: 50, hold: 70, leave: 50, curve: C } },
+      { straight: 70 },
+      { curve: { enter: 60, hold: 90, leave: 60, curve: -C * 1.3 } },
+      { straight: 50 },
+      { curve: { enter: 40, hold: 60, leave: 40, curve: C * 0.6 } },
+      { straight: 110 },
+      { curve: { enter: 55, hold: 110, leave: 55, curve: -C * 0.8 } },
+      { straight: 60 },
+      { curve: { enter: 45, hold: 80, leave: 45, curve: C * 1.5 } },
+      { straight: 80 },
+      { curve: { enter: 65, hold: 50, leave: 65, curve: -C } },
+      { straight: 100 },
     ];
 
     let p = 0;

@@ -1,49 +1,77 @@
 // Cortex Rush - selectable car models and colours.
-// Add a model or colour here and it appears in the selection screen and
-// the race automatically; no other file needs editing.
+//
+// Cars are drawn as vector silhouettes rather than photographs: the game
+// ships as a self-contained offline folder, and real manufacturer imagery
+// would be both a large binary asset and a trademark problem for a public
+// club booth. The three profiles below are generic supercar archetypes.
+//
+// Add a model or colour here and it appears in the selection screen and the
+// race automatically; no other file needs editing. All measurements are
+// fractions of the sprite box: x spans -0.5..0.5, y is 0 at the ground and
+// 1 at roof height.
 const CarCatalog = (function () {
   const MODELS = [
     {
-      id: "bolt",
-      name: "Bolt",
-      // Body outline as fractions of the sprite box: x is -0.5..0.5 across
-      // the width, y is 0 at the ground up to 1 at the roof.
-      body: [
-        [-0.50, 0.00], [-0.44, 0.42], [-0.30, 0.62], [0.30, 0.62],
-        [0.44, 0.42], [0.50, 0.00],
-      ],
-      cabin: { x: -0.26, y: 0.34, w: 0.52, h: 0.24 },
-      wingHeight: 0,
+      id: "apex",
+      name: "Apex GT",
+      // Low, wide supercar wedge with sharp shoulders over the rear wheels.
+      bodyWidth: 0.50,
+      shoulderWidth: 0.44,
+      roofWidth: 0.24,
+      bodyHeight: 0.40,
+      roofHeight: 0.58,
+      glass: { width: 0.20, top: 0.55, bottom: 0.42 },
+      wing: { width: 0.0, height: 0.0, thickness: 0 },
+      diffuser: 0.13,
+      exhausts: 2,
+      exhaustSpread: 0.16,
+      lightWidth: 0.15,
+      lightY: 0.30,
     },
     {
-      id: "vector",
-      name: "Vector",
-      body: [
-        [-0.50, 0.00], [-0.46, 0.30], [-0.34, 0.70], [-0.14, 0.80],
-        [0.14, 0.80], [0.34, 0.70], [0.46, 0.30], [0.50, 0.00],
-      ],
-      cabin: { x: -0.22, y: 0.42, w: 0.44, h: 0.28 },
-      wingHeight: 0.1,
+      id: "vortex",
+      name: "Vortex RS",
+      // GT3-style racer: big swan-neck rear wing and a wide diffuser.
+      bodyWidth: 0.49,
+      shoulderWidth: 0.45,
+      roofWidth: 0.27,
+      bodyHeight: 0.42,
+      roofHeight: 0.62,
+      glass: { width: 0.23, top: 0.59, bottom: 0.45 },
+      wing: { width: 0.56, height: 0.86, thickness: 0.07 },
+      diffuser: 0.16,
+      exhausts: 2,
+      exhaustSpread: 0.10,
+      lightWidth: 0.13,
+      lightY: 0.28,
     },
     {
-      id: "tank",
-      name: "Tank",
-      body: [
-        [-0.52, 0.00], [-0.52, 0.52], [-0.38, 0.72], [0.38, 0.72],
-        [0.52, 0.52], [0.52, 0.00],
-      ],
-      cabin: { x: -0.30, y: 0.44, w: 0.60, h: 0.24 },
-      wingHeight: 0.06,
+      id: "bolide",
+      name: "Bolide F1",
+      // Open-wheel single seater: narrow body, exposed tyres, tall wing.
+      bodyWidth: 0.22,
+      shoulderWidth: 0.20,
+      roofWidth: 0.14,
+      bodyHeight: 0.40,
+      roofHeight: 0.56,
+      glass: { width: 0.12, top: 0.54, bottom: 0.42 },
+      wing: { width: 0.62, height: 0.80, thickness: 0.08 },
+      diffuser: 0.10,
+      exhausts: 1,
+      exhaustSpread: 0,
+      lightWidth: 0.08,
+      lightY: 0.24,
+      openWheel: true,
     },
   ];
 
   const COLORS = [
-    { id: "cyan", name: "Cyan", hex: "#3ad1ff" },
+    { id: "cyan", name: "Cyan", hex: "#25c9f5" },
     { id: "lime", name: "Lime", hex: "#8bf34a" },
-    { id: "amber", name: "Amber", hex: "#ffb03a" },
-    { id: "violet", name: "Violet", hex: "#b06bff" },
-    { id: "white", name: "White", hex: "#eef4ff" },
-    { id: "magenta", name: "Magenta", hex: "#ff5ec7" },
+    { id: "amber", name: "Amber", hex: "#ffa22b" },
+    { id: "violet", name: "Violet", hex: "#a45cff" },
+    { id: "white", name: "Pearl", hex: "#eef4ff" },
+    { id: "magenta", name: "Magenta", hex: "#ff4fb8" },
   ];
 
   function modelById(id) {
