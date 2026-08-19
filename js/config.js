@@ -69,8 +69,10 @@ const CONFIG = {
     defaultName: "PLAYER",
   },
 
+  // To swap the billboard artwork, drop a new image into assets/ and point
+  // `path` at it. Any format the browser can render works (png, jpg, svg).
+  // A wide, landscape image reads best at the billboard's 15:8 aspect.
   POSTER: {
-    // Drop the event poster image here (png/jpg/svg). Documented in README.
-    path: "assets/poster.svg",
+    path: "assets/poster.jpeg",
   },
 };

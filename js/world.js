@@ -11,6 +11,10 @@ const World = (function () {
 
   // The primary branding surface: the event poster placed on roadside
   // billboards at intervals so it is clearly visible as the player passes.
+  // Offset is kept inside ~1.4 road half-widths; further out and the poster
+  // slides off the screen edge before it is close enough to read.
+  const BILLBOARD_OFFSET = 1.4;
+
   function placeBillboards(rng) {
     billboards.length = 0;
     const segments = Road.segments;
@@ -21,7 +25,7 @@ const World = (function () {
     for (let n = start; n < segments.length - 80; n += gap + Math.floor(rng() * 60)) {
       const billboard = {
         kind: "billboard",
-        x: side * 2.6,
+        x: side * BILLBOARD_OFFSET,
         z: segments[n].p1.world.z,
         side,
       };
