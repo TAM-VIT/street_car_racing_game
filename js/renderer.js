@@ -10,6 +10,9 @@ const RoadRenderer = (function () {
 
   let cameraDepth = 1 / Math.tan(((CONFIG.ROAD.fieldOfView / 2) * Math.PI) / 180);
 
+  const posterImage = new Image();
+  posterImage.src = CONFIG.POSTER.path;
+
   function project(p, cameraX, cameraY, cameraZ, width, height, roadWidth) {
     const transZ = p.world.z - cameraZ;
     const camZ = transZ <= 0 ? 0.1 : transZ;
@@ -102,6 +105,7 @@ const RoadRenderer = (function () {
       x += dx;
       dx += segment.curve;
 
+      segment.spriteP1 = null;
       if (p2.screen.y >= p1.screen.y || p2.screen.y >= maxY) continue;
 
       const colorSet = segment.color === "light" ? COLORS.light : COLORS.dark;
@@ -120,7 +124,47 @@ const RoadRenderer = (function () {
         laneLine
       );
 
+      segment.spriteP1 = p1;
       maxY = p2.screen.y;
+    }
+
+    // Sprites are drawn in a second pass, far to near, so nearer objects
+    // naturally overdraw farther ones without extra sorting per sprite.
+    for (let n = CONFIG.ROAD.drawDistance - 1; n >= 0; n--) {
+      const segment = segments[(baseIndex + n) % segments.length];
+      if (!segment.spriteP1) continue;
+      const p1 = segment.spriteP1;
+      if (segment.sprites.length) {
+        for (let i = 0; i < segment.sprites.length; i++) {
+          drawBillboard(ctx, p1.screen.x, p1.screen.y, p1.screen.scale, segment.sprites[i].side);
+        }
+      }
+    }
+  }
+
+  function drawBillboard(ctx, x, y, scale, side) {
+    const posterW = 900 * scale;
+    const posterH = 480 * scale;
+    const offset = side * (620 * scale) + side * posterW * 0.55;
+    const left = x + offset - posterW / 2;
+    const top = y - posterH - 40 * scale;
+
+    // pole
+    ctx.fillStyle = "#1c1f27";
+    ctx.fillRect(x + offset - 6 * scale, top + posterH, 12 * scale, 60 * scale);
+
+    if (posterImage.complete && posterImage.naturalWidth > 0) {
+      ctx.drawImage(posterImage, left, top, posterW, posterH);
+    } else {
+      ctx.fillStyle = "#0e1830";
+      ctx.fillRect(left, top, posterW, posterH);
+      ctx.strokeStyle = "#4d7fc9";
+      ctx.lineWidth = Math.max(1, 4 * scale);
+      ctx.strokeRect(left, top, posterW, posterH);
+      ctx.fillStyle = "#e8f1ff";
+      ctx.font = `${Math.max(8, 40 * scale)}px sans-serif`;
+      ctx.textAlign = "center";
+      ctx.fillText("CODE CORTEX 3.0", x + offset, top + posterH / 2);
     }
   }
 

@@ -7,6 +7,28 @@ const World = (function () {
   };
 
   const obstacles = [];
+  const billboards = [];
+
+  // The primary branding surface: the event poster placed on roadside
+  // billboards at intervals so it is clearly visible as the player passes.
+  function placeBillboards(rng) {
+    billboards.length = 0;
+    const segments = Road.segments;
+    const start = 90;
+    const gap = 230;
+    let side = 1;
+
+    for (let n = start; n < segments.length - 80; n += gap + Math.floor(rng() * 60)) {
+      const billboard = {
+        x: side * 2.6,
+        z: segments[n].p1.world.z,
+        side,
+      };
+      billboards.push(billboard);
+      segments[n].sprites.push(billboard);
+      side *= -1;
+    }
+  }
 
   function placeObstacles(rng) {
     obstacles.length = 0;
@@ -66,5 +88,5 @@ const World = (function () {
     return null;
   }
 
-  return { obstacles, OBSTACLE_TYPES, placeObstacles, checkCollision };
+  return { obstacles, billboards, OBSTACLE_TYPES, placeObstacles, placeBillboards, checkCollision };
 })();

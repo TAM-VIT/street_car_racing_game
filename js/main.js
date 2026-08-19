@@ -24,7 +24,9 @@
 
   Road.build();
   PlayerCar.reset();
-  World.placeObstacles(Utils.createRng(Date.now() & 0xffffffff));
+  const worldRng = Utils.createRng(Date.now() & 0xffffffff);
+  World.placeObstacles(worldRng);
+  World.placeBillboards(worldRng);
   window.Game.render = function (ctx, state) {
     const width = canvas.clientWidth;
     const height = canvas.clientHeight;
