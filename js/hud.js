@@ -138,9 +138,65 @@ const HUD = (function () {
     ctx.fillText("KM/H", x + w * 0.72, y + 65);
   }
 
+  // Linear race progress plus the gap to TAM. Complements the mini map,
+  // which conveys course shape rather than relative standing.
+  function drawProgressBar(ctx, width, height) {
+    const w = Math.min(760, width - 80);
+    const h = 54;
+    const x = width / 2 - w / 2;
+    const y = height - h - 22;
+    drawPanel(ctx, x, y, w, h);
+
+    const trackX = x + 20;
+    const trackW = w - 40;
+    const trackY = y + 32;
+
+    ctx.fillStyle = "rgba(232, 241, 255, 0.14)";
+    ctx.beginPath();
+    ctx.roundRect(trackX, trackY, trackW, 8, 4);
+    ctx.fill();
+
+    const playerT = Race.progress(PlayerCar.state.z);
+    const tamT = Race.progress(TamCar.state.z);
+
+    ctx.fillStyle = PALETTE.player;
+    ctx.beginPath();
+    ctx.roundRect(trackX, trackY, Math.max(4, trackW * playerT), 8, 4);
+    ctx.fill();
+
+    drawProgressMarker(ctx, trackX + trackW * tamT, trackY + 4, PALETTE.tam);
+    drawProgressMarker(ctx, trackX + trackW * playerT, trackY + 4, PALETTE.player);
+
+    ctx.textAlign = "left";
+    ctx.fillStyle = PALETTE.dim;
+    ctx.font = "600 10px sans-serif";
+    ctx.fillText("START", trackX, y + 18);
+
+    ctx.textAlign = "right";
+    ctx.fillText("FINISH", trackX + trackW, y + 18);
+
+    ctx.textAlign = "center";
+    const lead = playerT - tamT;
+    const label = lead >= 0 ? "LEADING" : "BEHIND";
+    ctx.fillStyle = lead >= 0 ? PALETTE.player : PALETTE.tam;
+    ctx.font = "700 11px sans-serif";
+    ctx.fillText(label, x + w / 2, y + 18);
+  }
+
+  function drawProgressMarker(ctx, x, y, color) {
+    ctx.fillStyle = color;
+    ctx.strokeStyle = "rgba(9, 14, 28, 0.9)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(x, y, 7, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+  }
+
   function render(ctx, width, height) {
     drawMiniMap(ctx, width, height);
     drawTimeAndSpeed(ctx, width);
+    drawProgressBar(ctx, width, height);
   }
 
   function reset() {
