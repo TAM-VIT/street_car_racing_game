@@ -15,6 +15,7 @@ const PlayerCar = (function () {
     state.offRoad = false;
     state.controlDisruption = 0;
     state.hitCount = 0;
+    state.impactTimer = 0;
   }
 
   function worldX() {
@@ -60,6 +61,7 @@ const PlayerCar = (function () {
     state.x = Utils.clamp(state.x, -2, 2);
 
     if (state.controlDisruption > 0) state.controlDisruption -= dt;
+    if (state.impactTimer > 0) state.impactTimer -= dt;
 
     const hit = World.checkCollision(state, previousZ);
     if (hit) {
@@ -75,6 +77,7 @@ const PlayerCar = (function () {
     const c = CONFIG.CAR;
     state.speed = Math.max(0, state.speed - c.obstacleSpeedPenalty);
     state.controlDisruption = c.obstacleControlDisruption;
+    state.impactTimer = CONFIG.CAR.impactFlashSeconds;
   }
 
   return { state, reset, worldX, update };

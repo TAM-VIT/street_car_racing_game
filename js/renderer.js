@@ -112,14 +112,25 @@ const RoadRenderer = (function () {
     // leaving the road is felt as well as seen. Skipped when the viewer
     // has asked for reduced motion.
     let shakeY = 0;
-    if (PlayerCar.state.offRoad && !REDUCED_MOTION.matches) {
-      shakeTime += 0.35;
-      const intensity = (PlayerCar.state.speed / CONFIG.CAR.maxSpeed) * 5;
-      shakeY = Math.sin(shakeTime) * intensity;
+    let shakeX = 0;
+    if (!REDUCED_MOTION.matches) {
+      if (PlayerCar.state.offRoad) {
+        shakeTime += 0.35;
+        const intensity = (PlayerCar.state.speed / CONFIG.CAR.maxSpeed) * 5;
+        shakeY = Math.sin(shakeTime) * intensity;
+      }
+      // A hit shakes the whole scene hard and briefly, so losing speed is
+      // felt in the view rather than only read off the HUD number.
+      if (PlayerCar.state.impactTimer > 0) {
+        const t = PlayerCar.state.impactTimer / CONFIG.CAR.impactFlashSeconds;
+        const kick = t * t * 22;
+        shakeX += (Math.random() - 0.5) * kick;
+        shakeY += (Math.random() - 0.5) * kick;
+      }
     }
 
     ctx.save();
-    if (shakeY !== 0) ctx.translate(0, shakeY);
+    if (shakeX !== 0 || shakeY !== 0) ctx.translate(shakeX, shakeY);
 
     const segLen = CONFIG.ROAD.segmentLength;
     const baseIndex = Math.floor(playerZ / segLen) % segments.length;
@@ -203,19 +214,60 @@ const RoadRenderer = (function () {
     }
 
     ctx.restore();
-    renderCars(ctx, width, height, cameraZ, cameraHeight, PlayerCar.state.x);
+    renderCars(ctx, width, height, cameraZ, cameraHeight, PlayerCar.state.x, cameraX);
+    drawImpactFeedback(ctx, width, height);
+  }
+
+  // Red edge flash on impact: an unmissable, peripheral cue that the hit
+  // cost you speed, without obscuring the road ahead.
+  function drawImpactFeedback(ctx, width, height) {
+    const timer = PlayerCar.state.impactTimer;
+    if (!timer || timer <= 0) return;
+    const t = timer / CONFIG.CAR.impactFlashSeconds;
+
+    const vignette = ctx.createRadialGradient(
+      width / 2, height / 2, Math.min(width, height) * 0.25,
+      width / 2, height / 2, Math.max(width, height) * 0.62
+    );
+    vignette.addColorStop(0, "rgba(255, 40, 60, 0)");
+    vignette.addColorStop(1, `rgba(255, 40, 60, ${0.55 * t})`);
+    ctx.fillStyle = vignette;
+    ctx.fillRect(0, 0, width, height);
+
+    ctx.save();
+    ctx.globalAlpha = Math.min(1, t * 1.4);
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#ff5a70";
+    const size = Math.max(18, Math.min(width, height) * 0.045);
+    ctx.font = `800 ${size}px sans-serif`;
+    ctx.shadowColor = "rgba(0,0,0,0.7)";
+    ctx.shadowBlur = 8;
+    ctx.fillText("IMPACT", width / 2, height * 0.32);
+    ctx.font = `700 ${size * 0.55}px ui-monospace, Consolas, monospace`;
+    ctx.fillStyle = "#ffb3bd";
+    ctx.fillText(
+      `-${Math.round((CONFIG.CAR.obstacleSpeedPenalty / CONFIG.CAR.maxSpeed) * CONFIG.HUD.displayTopSpeedKph)} KM/H`,
+      width / 2,
+      height * 0.32 + size * 0.85
+    );
+    ctx.restore();
   }
 
   const REDUCED_MOTION = window.matchMedia("(prefers-reduced-motion: reduce)");
 
   const tamPoint = { world: { y: 0 }, screen: null };
 
-  function renderCars(ctx, width, height, cameraZ, cameraHeight, playerXFrac) {
+  function renderCars(ctx, width, height, cameraZ, cameraHeight, playerXFrac, cameraX) {
     const tam = TamCar.state;
     const drawDist = CONFIG.ROAD.drawDistance * CONFIG.ROAD.segmentLength;
     const dz = tam.z - cameraZ;
     if (dz > 10 && dz < drawDist) {
-      project(tamPoint, 0, cameraHeight, cameraZ, tam.z, width, height, CONFIG.ROAD.roadWidth);
+      // Project TAM against the curve offset of the segment it is standing
+      // on. Projecting it down the straight-ahead centre line instead leaves
+      // it hanging over the grass whenever the road bends away.
+      const tamSegment = Road.findSegment(tam.z);
+      const roadX = tamSegment.roadX || 0;
+      project(tamPoint, cameraX - roadX, cameraHeight, cameraZ, tam.z, width, height, CONFIG.ROAD.roadWidth);
       const carX = tamPoint.screen.x + tam.x * tamPoint.screen.w;
 
       // Running right behind TAM would otherwise hide the obstacles the
