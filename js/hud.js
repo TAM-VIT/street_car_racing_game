@@ -20,26 +20,76 @@ const HUD = (function () {
     return Utils.clamp(Math.min(width / 1280, height / 720), 0.62, 1.25);
   }
 
+  // Building the mini map path.
+  //
+  // The renderer fakes curves by sliding the road sideways in screen space,
+  // so integrating that sideways slide as a position gives a shape drifting
+  // 15x further sideways than the course is long: geometrically meaningless
+  // as a map. What `curve` actually represents to the driver is how hard the
+  // road is turning, so it is integrated here as a change in heading and the
+  // path is walked in 2D from that. The result is a real track outline whose
+  // left and right bends line up with the ones the player drives through.
+  let trackShape = null;
+
+  const HEADING_PER_CURVE = 0.0009; // radians of heading per unit of curve
+
   function buildTrackShape() {
     const segments = Road.segments;
     const points = [];
-    const samples = 60;
-    let x = 0;
-    let dx = 0;
-    let minX = 0;
-    let maxX = 0;
+    const samples = 200;
+    const step = Math.max(1, Math.floor(segments.length / samples));
+
+    let heading = 0;
+    let px = 0;
+    let py = 0;
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
 
     for (let i = 0; i < segments.length; i++) {
-      dx += segments[i].curve;
-      x += dx * 0.02;
-      if (i % Math.floor(segments.length / samples) === 0) {
-        points.push(x);
-        if (x < minX) minX = x;
-        if (x > maxX) maxX = x;
+      heading += segments[i].curve * HEADING_PER_CURVE;
+      px += Math.sin(heading);
+      py += Math.cos(heading);
+
+      if (i % step === 0 || i === segments.length - 1) {
+        points.push({ x: px, y: py, t: i / (segments.length - 1) });
+        if (px < minX) minX = px;
+        if (px > maxX) maxX = px;
+        if (py < minY) minY = py;
+        if (py > maxY) maxY = py;
       }
     }
 
-    trackShape = { points, minX, maxX };
+    trackShape = { points, minX, maxX, minY, maxY };
+  }
+
+  // Maps a track point into the panel using one uniform scale for both axes.
+  function fitPoint(p, shape, box) {
+    const spanX = Math.max(0.001, shape.maxX - shape.minX);
+    const spanY = Math.max(0.001, shape.maxY - shape.minY);
+    const scale = Math.min(box.w / spanX, box.h / spanY);
+    const drawW = spanX * scale;
+    const drawH = spanY * scale;
+    const offsetX = box.x + (box.w - drawW) / 2;
+    const offsetY = box.y + (box.h - drawH) / 2;
+    return {
+      x: offsetX + (p.x - shape.minX) * scale,
+      // Screen y grows downward, so the start of the course sits at the
+      // bottom of the panel and the finish at the top.
+      y: offsetY + drawH - (p.y - shape.minY) * scale,
+    };
+  }
+
+  // Point on the traced path at a given race progress, so the car markers
+  // sit exactly on the line rather than beside it.
+  function pointAtProgress(shape, t) {
+    const pts = shape.points;
+    const idx = Utils.clamp(t * (pts.length - 1), 0, pts.length - 1);
+    const i0 = Math.floor(idx);
+    const i1 = Math.min(pts.length - 1, i0 + 1);
+    const f = idx - i0;
+    return {
+      x: Utils.lerp(pts[i0].x, pts[i1].x, f),
+      y: Utils.lerp(pts[i0].y, pts[i1].y, f),
+    };
   }
 
   function drawPanel(ctx, x, y, w, h) {
@@ -57,52 +107,73 @@ const HUD = (function () {
 
     const u = uiScale(width, height);
     const w = 190 * u;
-    const h = 130 * u;
+    const h = 140 * u;
     const x = 18 * u;
     const y = 18 * u;
     drawPanel(ctx, x, y, w, h);
 
-    const pad = 16 * u;
-    const innerX = x + pad;
-    const innerY = y + pad + 8 * u;
-    const innerW = w - pad * 2;
-    const innerH = h - pad * 2 - 8 * u;
+    const pad = 14 * u;
+    const box = {
+      x: x + pad,
+      y: y + pad + 12 * u,
+      w: w - pad * 2,
+      h: h - pad * 2 - 12 * u,
+    };
 
     ctx.fillStyle = PALETTE.dim;
     ctx.font = `600 ${10 * u}px sans-serif`;
     ctx.textAlign = "left";
-    ctx.fillText("COURSE", innerX, y + 20 * u);
+    ctx.fillText("COURSE", box.x, y + 20 * u);
 
-    const { points, minX, maxX } = trackShape;
-    const spanX = Math.max(0.001, maxX - minX);
-
-    ctx.strokeStyle = "rgba(232, 241, 255, 0.5)";
-    ctx.lineWidth = 3 * u;
+    // The course line itself.
+    ctx.strokeStyle = "rgba(232, 241, 255, 0.45)";
+    ctx.lineWidth = 3.5 * u;
     ctx.lineCap = "round";
+    ctx.lineJoin = "round";
     ctx.beginPath();
-    for (let i = 0; i < points.length; i++) {
-      const t = i / (points.length - 1);
-      const px = innerX + ((points[i] - minX) / spanX) * innerW;
-      const py = innerY + innerH - t * innerH;
-      if (i === 0) ctx.moveTo(px, py);
-      else ctx.lineTo(px, py);
-    }
+    trackShape.points.forEach((p, i) => {
+      const s = fitPoint(p, trackShape, box);
+      if (i === 0) ctx.moveTo(s.x, s.y);
+      else ctx.lineTo(s.x, s.y);
+    });
     ctx.stroke();
 
-    drawMarker(ctx, TamCar.state.z, PALETTE.tam, innerX, innerY, innerW, innerH, spanX, minX, points, u);
-    drawMarker(ctx, PlayerCar.state.z, PALETTE.player, innerX, innerY, innerW, innerH, spanX, minX, points, u);
+    // Portion already covered, drawn over the base line.
+    const playerT = Race.progress(PlayerCar.state.z);
+    ctx.strokeStyle = PALETTE.player;
+    ctx.lineWidth = 3.5 * u;
+    ctx.beginPath();
+    let started = false;
+    trackShape.points.forEach((p) => {
+      if (p.t > playerT) return;
+      const s = fitPoint(p, trackShape, box);
+      if (!started) { ctx.moveTo(s.x, s.y); started = true; }
+      else ctx.lineTo(s.x, s.y);
+    });
+    if (started) ctx.stroke();
+
+    // Start and finish pips.
+    const startPt = fitPoint(trackShape.points[0], trackShape, box);
+    const endPt = fitPoint(trackShape.points[trackShape.points.length - 1], trackShape, box);
+    ctx.fillStyle = "rgba(232, 241, 255, 0.55)";
+    ctx.fillRect(startPt.x - 3 * u, startPt.y - 1.5 * u, 6 * u, 3 * u);
+    ctx.fillStyle = PALETTE.accent;
+    ctx.fillRect(endPt.x - 3 * u, endPt.y - 1.5 * u, 6 * u, 3 * u);
+
+    drawMarker(ctx, TamCar.state.z, PALETTE.tam, box, u);
+    drawMarker(ctx, PlayerCar.state.z, PALETTE.player, box, u);
   }
 
-  function drawMarker(ctx, z, color, innerX, innerY, innerW, innerH, spanX, minX, points, u) {
-    const t = Race.progress(z);
-    const idx = Utils.clamp(Math.round(t * (points.length - 1)), 0, points.length - 1);
-    const px = innerX + ((points[idx] - minX) / spanX) * innerW;
-    const py = innerY + innerH - t * innerH;
-
+  function drawMarker(ctx, z, color, box, u) {
+    const p = pointAtProgress(trackShape, Race.progress(z));
+    const s = fitPoint(p, trackShape, box);
     ctx.fillStyle = color;
+    ctx.strokeStyle = "rgba(9, 14, 28, 0.9)";
+    ctx.lineWidth = 1.5 * u;
     ctx.beginPath();
-    ctx.arc(px, py, 4.5 * u, 0, Math.PI * 2);
+    ctx.arc(s.x, s.y, 4.5 * u, 0, Math.PI * 2);
     ctx.fill();
+    ctx.stroke();
   }
 
   function formatTime(seconds) {
