@@ -4,8 +4,7 @@ A browser-based, keyboard-controlled racing game built as a booth demo and
 promotional piece for the **Code Cortex 3.0** hackathon.
 
 You race a car down a curving road against an AI opponent named TAM, dodging
-cones, oil drums and barriers while event branding passes by on roadside
-billboards.
+cones and oil drums while event branding passes by on roadside billboards.
 
 ---
 
@@ -18,13 +17,17 @@ Because the game loads the poster image, browsers block it from a `file://`
 URL, so serve the folder over HTTP:
 
 ```bash
-# from the project root, pick whichever you have
-python -m http.server 8000
-# or
-npx serve .
+python serve.py          # http://localhost:8000
+python serve.py 8080     # or pick another port
 ```
 
 Then open <http://localhost:8000> in Chrome.
+
+`serve.py` is a thin wrapper around Python's built-in server that adds
+no-cache headers. Plain `python -m http.server` also works, but the browser
+will cache `js/` and `css/` aggressively, so edits appear not to take effect
+and you end up chasing bugs that are already fixed. If you do use the plain
+server, hard-refresh with **Ctrl+Shift+R** after changing a file.
 
 Once loaded the game runs entirely offline. It makes no network calls at
 runtime and has no backend, database or accounts.
@@ -137,9 +140,13 @@ skill levels, TAM currently wins **about 35%** of races.
 ## Project layout
 
 ```
+serve.py            local no-cache dev server
 index.html          markup for every screen and the script order
 css/style.css       design tokens, screen styling, HUD chrome
-assets/poster.jpeg  event artwork shown on the billboards
+assets/
+  poster.jpeg       event artwork shown on the billboards
+  qr-register.png   registration QR shown on the results screen
+  favicon.svg       browser tab icon
 js/
   config.js         all tunable values, in one place
   utils.js          math helpers and a seedable RNG
