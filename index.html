@@ -61,13 +61,27 @@
   </section>
 
   <section id="screen-results" class="screen" hidden>
-    <div class="panel">
+    <div class="panel panel-results">
       <p class="eyebrow">Code Cortex 3.0</p>
       <h2 class="heading" id="result-heading">Result</h2>
       <dl class="stats" id="result-stats"></dl>
       <p class="lede" id="result-summary"></p>
-      <h3 class="subheading">Leaderboard</h3>
-      <ol class="leaderboard" id="result-leaderboard"></ol>
+      <div class="result-cols">
+        <div class="result-board">
+          <h3 class="subheading">Leaderboard</h3>
+          <ol class="leaderboard" id="result-leaderboard"></ol>
+          <button type="button" class="btn btn-quiet" id="clear-leaderboard"
+                  data-action="clear-leaderboard" hidden>Clear leaderboard</button>
+        </div>
+
+        <aside class="register">
+          <p class="register-kicker">Think you can beat TAM?</p>
+          <p class="register-title">Register for Code&nbsp;Cortex&nbsp;3.0</p>
+          <img class="register-qr" src="assets/qr-register.png" width="220" height="220"
+               alt="QR code linking to the Code Cortex 3.0 registration page" />
+          <p class="register-sub">Scan to grab your spot</p>
+        </aside>
+      </div>
       <div class="row">
         <button type="button" class="btn btn-primary" data-action="rematch">Rematch</button>
         <button type="button" class="btn" data-action="to-title">Change car</button>

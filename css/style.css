@@ -403,3 +403,105 @@ button {
 .lb-session {
   opacity: 0.78;
 }
+
+/* Secondary action tucked under the leaderboard it acts on. */
+.btn-quiet {
+  padding: 8px 16px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-dim);
+  background: transparent;
+}
+
+.btn-quiet:hover {
+  color: var(--ink);
+  background: rgba(232, 241, 255, 0.08);
+}
+
+.btn-quiet[hidden] {
+  display: none;
+}
+
+/* Results body: board on the left, registration call to action beside it. */
+.result-cols {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--space-3);
+  align-items: start;
+  margin-top: var(--space-3);
+  text-align: left;
+}
+
+.result-board {
+  min-width: 0;
+}
+
+.result-board .subheading {
+  margin-top: 0;
+}
+
+.register {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: var(--space-3);
+  text-align: center;
+  background: linear-gradient(135deg, rgba(58, 209, 255, 0.18), rgba(58, 209, 255, 0.04));
+  border: 1px solid rgba(58, 209, 255, 0.4);
+  border-radius: var(--radius-md);
+}
+
+.register-qr {
+  width: 200px;
+  height: 200px;
+  border-radius: var(--radius-sm);
+  /* White quiet zone: QR codes will not scan reliably without it. */
+  background: #fff;
+  padding: 10px;
+}
+
+.register-kicker {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.register-title {
+  font-size: 19px;
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  margin-bottom: 2px;
+}
+
+.register-sub {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-dim);
+}
+
+.lb-empty {
+  padding: 14px;
+  font-size: 13px;
+  color: var(--ink-dim);
+  background: rgba(232, 241, 255, 0.04);
+  border-radius: var(--radius-sm);
+}
+
+/* Stack the board and the QR once they no longer fit side by side. */
+@media (max-width: 700px) {
+  .result-cols {
+    grid-template-columns: 1fr;
+  }
+  .register-qr {
+    width: 160px;
+    height: 160px;
+  }
+}
+
+.panel-results {
+  width: min(760px, 100%);
+}
