@@ -66,7 +66,9 @@ const CarCatalog = (function () {
   ];
 
   const COLORS = [
-    { id: "cyan", name: "Cyan", hex: "#25c9f5" },
+    // No blue in this list: TAM is always blue, and a booth player must be
+    // able to tell their own car apart at a glance.
+    { id: "red", name: "Red", hex: "#ff3b3b" },
     { id: "lime", name: "Lime", hex: "#8bf34a" },
     { id: "amber", name: "Amber", hex: "#ffa22b" },
     { id: "violet", name: "Violet", hex: "#a45cff" },
