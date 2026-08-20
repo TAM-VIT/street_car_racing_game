@@ -520,9 +520,8 @@ const RoadRenderer = (function () {
 
   function drawObstacleShape(ctx, x, y, w, obstacle) {
     const size = Math.max(2, obstacle.radius * w * 2);
-    if (obstacle.type === "cone") drawCone(ctx, x, y, size);
-    else if (obstacle.type === "oil") drawOilDrum(ctx, x, y, size);
-    else drawBarrier(ctx, x, y, size);
+    if (obstacle.type === "oil") drawOilDrum(ctx, x, y, size);
+    else drawCone(ctx, x, y, size);
   }
 
   function drawCone(ctx, x, y, size) {
@@ -604,51 +603,15 @@ const RoadRenderer = (function () {
     ctx.fill();
   }
 
-  function drawBarrier(ctx, x, y, size) {
-    const w = size * 2.1;
-    const h = size * 0.62;
-    const top = y - h;
-    const legH = h * 0.32;
-
-    ctx.fillStyle = "#2a2f3b";
-    ctx.fillRect(x - w * 0.42, y - legH, w * 0.06, legH);
-    ctx.fillRect(x + w * 0.36, y - legH, w * 0.06, legH);
-
-    ctx.fillStyle = "#f2f2f2";
-    ctx.fillRect(x - w / 2, top, w, h * 0.72);
-
-    // Diagonal hazard chevrons
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(x - w / 2, top, w, h * 0.72);
-    ctx.clip();
-    ctx.fillStyle = "#d93a3a";
-    const step = w / 5;
-    for (let i = -1; i < 6; i++) {
-      ctx.beginPath();
-      ctx.moveTo(x - w / 2 + i * step, top + h * 0.72);
-      ctx.lineTo(x - w / 2 + i * step + step * 0.5, top + h * 0.72);
-      ctx.lineTo(x - w / 2 + i * step + step * 0.5 + h * 0.72, top);
-      ctx.lineTo(x - w / 2 + i * step + h * 0.72, top);
-      ctx.closePath();
-      ctx.fill();
-    }
-    ctx.restore();
-
-    ctx.strokeStyle = "#20242e";
-    ctx.lineWidth = Math.max(1, size * 0.03);
-    ctx.strokeRect(x - w / 2, top, w, h * 0.72);
-  }
-
   function drawBillboard(ctx, x, y, w, spriteX) {
-    const posterW = w * 0.55;
-    const posterH = w * 0.3;
+    const posterW = w * 0.95;
+    const posterH = w * 0.52;
     const cx = x + spriteX * w;
     const left = cx - posterW / 2;
-    const top = y - posterH - w * 0.04;
+    const top = y - posterH - w * 0.1;
 
     ctx.fillStyle = "#1c1f27";
-    ctx.fillRect(cx - w * 0.01, top + posterH, w * 0.02, w * 0.07);
+    ctx.fillRect(cx - w * 0.016, top + posterH, w * 0.032, w * 0.1);
 
     if (posterImage.complete && posterImage.naturalWidth > 0) {
       ctx.drawImage(posterImage, left, top, posterW, posterH);

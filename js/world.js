@@ -3,7 +3,6 @@ const World = (function () {
   const OBSTACLE_TYPES = {
     cone: { radius: 0.14 },
     oil: { radius: 0.18 },
-    barrier: { radius: 0.22 },
   };
 
   const obstacles = [];
