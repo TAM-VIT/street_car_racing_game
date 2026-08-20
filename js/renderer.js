@@ -170,6 +170,10 @@ const RoadRenderer = (function () {
       project(p1, cameraX - x, cameraHeight, cameraZ, p1.world.z + loopOffsetZ, width, height, CONFIG.ROAD.roadWidth);
       project(p2, cameraX - x - dx, cameraHeight, cameraZ, p2.world.z + loopOffsetZ, width, height, CONFIG.ROAD.roadWidth);
 
+      // The accumulated curve offset for this segment, kept so cars sitting
+      // further down the road can be placed against the road's real screen
+      // position instead of the straight-ahead centre line.
+      segment.roadX = x;
       x += dx;
       dx += segment.curve;
 
@@ -297,7 +301,7 @@ const RoadRenderer = (function () {
 
   // TAM is always the same contrasting red with a name tag, so the player
   // can tell at a glance which car is theirs.
-  const TAM_COLOR = "#ff3b5c";
+  const TAM_COLOR = "#2f6bff";
   const TAM_MODEL = CarCatalog.modelById("vortex");
 
   // Draws a race car seen from behind, layered back to front: rear wing,

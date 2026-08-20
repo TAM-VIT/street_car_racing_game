@@ -5,15 +5,13 @@ const HUD = (function () {
     border: "rgba(122, 162, 247, 0.35)",
     text: "#e8f1ff",
     dim: "#9fb3d9",
-    player: "#3ad1ff",
-    tam: "#ff3b5c",
+    // TAM is always blue. The player is deliberately warm so the two are a
+    // warm/cool pair: on a small mini map two similar blues would be the
+    // one thing a booth player cannot afford to misread.
+    player: "#ffd23f",
+    tam: "#2f6bff",
     accent: "#ffd23f",
   };
-
-  // The course is largely linear, so the mini map draws the track as a
-  // folded line whose horizontal offset follows the accumulated curvature,
-  // giving a schematic sense of the course shape.
-  let trackShape = null;
 
   // HUD elements are laid out at a 1280x720 reference size and scaled from
   // whichever axis is tighter, so panels stay proportionate on a short
