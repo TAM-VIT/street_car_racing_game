@@ -17,10 +17,16 @@ const Screens = (function () {
       document.getElementById(SCREEN_BY_STATE[key]).hidden = key !== state;
     });
 
-    // Focus the first meaningful control so the flow is keyboard-navigable
-    // and a booth visitor can type their name without reaching for a mouse.
     const visible = SCREEN_BY_STATE[state];
     if (!visible) return;
+
+    // Each visitor starts from a blank field. Leaving the previous player's
+    // name in place made the next person in the queue edit a stranger's name
+    // instead of entering their own.
+    if (state === GameState.NAME_ENTRY) nameInput.value = "";
+
+    // Focus the first meaningful control so the flow is keyboard-navigable
+    // and a booth visitor can type their name without reaching for a mouse.
     const target = document.getElementById(visible).querySelector("input, button");
     if (target) target.focus();
   }
@@ -98,6 +104,7 @@ const Screens = (function () {
     "start-race": () => startRace(),
     rematch: () => startRace(),
     "toggle-mute": () => syncMuteButton(Audio.toggleMute()),
+    "clear-leaderboard": () => clearLeaderboard(),
   };
 
   function syncMuteButton(muted) {
@@ -159,28 +166,64 @@ const Screens = (function () {
       ? `You crossed the line ${gapSeconds.toFixed(2)}s ahead of TAM.`
       : `TAM took it by ${gapSeconds.toFixed(2)}s. Run it back.`;
 
-    renderLeaderboard(time);
+    recordResult(time);
+    renderLeaderboard();
+    syncClearButton();
   }
 
-  // Finishing order for this race, plus every result from the session so the
-  // booth builds a running scoreboard across visitors.
+  // Every result from the session, so the booth builds a running scoreboard
+  // across visitors until someone clears it.
   const sessionResults = [];
+  let currentEntryId = 0;
+  let nextEntryId = 1;
 
-  function renderLeaderboard(playerTime) {
+  // Recording is kept separate from rendering: the leaderboard is re-rendered
+  // after a clear, and a render that also recorded would count the same race
+  // twice every time it redrew.
+  function recordResult(playerTime) {
+    currentEntryId = nextEntryId++;
+    sessionResults.push({ id: currentEntryId, name: Selection.state.name, time: playerTime });
+    sessionResults.sort((a, b) => a.time - b.time);
+  }
+
+  function clearLeaderboard() {
+    sessionResults.length = 0;
+    bestTime = null;
+    currentEntryId = 0;
+    renderLeaderboard();
+    syncClearButton();
+    // Keep the stat tile in step with the cleared session history.
+    const sessionBest = document.querySelector("#result-stats .stat:last-child dd");
+    if (sessionBest) sessionBest.textContent = "--:--.--";
+  }
+
+  function syncClearButton() {
+    const btn = document.getElementById("clear-leaderboard");
+    if (!btn) return;
+    // Shown as soon as there is any session history at all. Waiting for a
+    // second race made the control invisible to anyone who had only raced
+    // once, which is most of a booth queue.
+    btn.hidden = sessionResults.length === 0;
+  }
+
+  function renderLeaderboard() {
     const list = document.getElementById("result-leaderboard");
     list.replaceChildren();
 
-    sessionResults.push({ name: Selection.state.name, time: playerTime });
-    sessionResults.sort((a, b) => a.time - b.time);
+    // The board is the session history only. The current race result is
+    // already spelled out by the stats and summary above it, and mixing the
+    // two meant "clear" left rows on screen and looked like it had failed.
+    if (sessionResults.length === 0) {
+      const empty = document.createElement("li");
+      empty.className = "lb-empty";
+      empty.textContent = "No times yet. Finish a race to get on the board.";
+      list.appendChild(empty);
+      return;
+    }
 
-    const race = [
-      { name: Selection.state.name, time: playerTime, isPlayer: true },
-      { name: "TAM", time: Race.state.tamFinishTime || playerTime, isPlayer: false },
-    ].sort((a, b) => a.time - b.time);
-
-    race.forEach((entry, i) => {
+    sessionResults.slice(0, 6).forEach((entry, i) => {
       const li = document.createElement("li");
-      li.className = "lb-row" + (entry.isPlayer ? " lb-you" : "");
+      li.className = "lb-row" + (entry.id === currentEntryId ? " lb-you" : "");
 
       const pos = document.createElement("span");
       pos.className = "lb-pos";
@@ -198,29 +241,6 @@ const Screens = (function () {
       li.append(pos, name, t);
       list.appendChild(li);
     });
-
-    if (sessionResults.length > 1) {
-      const head = document.createElement("li");
-      head.className = "lb-head";
-      head.textContent = "Best times this session";
-      list.appendChild(head);
-
-      sessionResults.slice(0, 3).forEach((entry, i) => {
-        const li = document.createElement("li");
-        li.className = "lb-row lb-session";
-        const pos = document.createElement("span");
-        pos.className = "lb-pos";
-        pos.textContent = String(i + 1);
-        const name = document.createElement("span");
-        name.className = "lb-name";
-        name.textContent = entry.name;
-        const t = document.createElement("span");
-        t.className = "lb-time";
-        t.textContent = formatTime(entry.time);
-        li.append(pos, name, t);
-        list.appendChild(li);
-      });
-    }
   }
 
   function init() {
