@@ -31,13 +31,17 @@ const CONFIG = {
     offRoadDecel: 9000, // extra speed lost per second while off the road
     offRoadMaxSpeed: 9000, // speed cap while off the road
     steerRate: 2.2, // lateral units/sec at low speed
-    steerHighSpeedFactor: 0.45, // multiplier applied to steerRate at max speed
-    // Curve push per unit of curve * speed. Must stay well under steerRate:
-    // the pull should be a drift the player leans against, never a force
-    // that outruns steering and drags the car off the road on its own.
-    centrifugalStrength: 0.00004,
+    steerHighSpeedFactor: 0.5, // multiplier applied to steerRate at max speed
+    // Curve push per unit of curve * speed. Because the car's x is measured
+    // relative to the road centre, a near-zero value makes the car track
+    // curves by itself, which reads as the game steering for you. This is
+    // tuned so ignoring a curve puts you on the grass in about 1.2s, while
+    // steering (1.10 u/s at max speed) still beats the strongest push
+    // (0.99 u/s), so the corner is survivable but never free.
+    centrifugalStrength: 0.00012,
     obstacleSpeedPenalty: 7000, // speed lost instantly on collision
     obstacleControlDisruption: 0.6, // seconds of reduced steering after a hit
+    impactFlashSeconds: 0.45, // duration of the on-screen impact feedback
   },
 
   // TAM's difficulty knobs. Target: TAM wins roughly 30-40% of races. Raise

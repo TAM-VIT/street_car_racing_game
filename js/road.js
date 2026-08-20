@@ -50,20 +50,26 @@ const Road = (function () {
     addStraight(120); // start straight, gives the player time to build speed
 
     const C = CONFIG.ROAD.curveStrength;
+
+    // Corner lengths are set in seconds of driving, not raw segment counts.
+    // At max speed the car covers ~110 segments per second, so the short
+    // corners this track originally used were over in about a second and a
+    // half: too brief for the curve to push the car anywhere before the next
+    // bend cancelled it out. These are long enough to have to be driven.
     const pattern = [
+      { straight: 150 },
+      { curve: { enter: 120, hold: 260, leave: 120, curve: C } },
+      { straight: 120 },
+      { curve: { enter: 140, hold: 320, leave: 140, curve: -C * 1.25 } },
       { straight: 90 },
-      { curve: { enter: 50, hold: 70, leave: 50, curve: C } },
-      { straight: 70 },
-      { curve: { enter: 60, hold: 90, leave: 60, curve: -C * 1.3 } },
-      { straight: 50 },
-      { curve: { enter: 40, hold: 60, leave: 40, curve: C * 0.6 } },
+      { curve: { enter: 110, hold: 220, leave: 110, curve: C * 0.7 } },
+      { straight: 170 },
+      { curve: { enter: 130, hold: 300, leave: 130, curve: -C * 0.85 } },
       { straight: 110 },
-      { curve: { enter: 55, hold: 110, leave: 55, curve: -C * 0.8 } },
-      { straight: 60 },
-      { curve: { enter: 45, hold: 80, leave: 45, curve: C * 1.5 } },
-      { straight: 80 },
-      { curve: { enter: 65, hold: 50, leave: 65, curve: -C } },
-      { straight: 100 },
+      { curve: { enter: 120, hold: 280, leave: 120, curve: C * 1.4 } },
+      { straight: 140 },
+      { curve: { enter: 140, hold: 240, leave: 140, curve: -C } },
+      { straight: 160 },
     ];
 
     let p = 0;
